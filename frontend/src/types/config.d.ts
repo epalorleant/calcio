@@ -4,6 +4,7 @@ declare global {
       apiUrl?: string;
     };
   }
+  const window: Window & typeof globalThis;
 }
 
 export {};

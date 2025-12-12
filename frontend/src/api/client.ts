@@ -1,11 +1,12 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const client = axios.create({
-  // Prefer runtime config (injected via config.js), then build-time env, then same-origin proxy.
+  // Prefer runtime config (injected via config.js), then build-time env, then same-origin root.
   baseURL:
     (typeof window !== "undefined" ? window.__APP_CONFIG__?.apiUrl : undefined) ??
     import.meta.env.VITE_API_URL ??
-    "/api",
+    window?.location?.origin ??
+    "/",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
