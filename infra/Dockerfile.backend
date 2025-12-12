@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY backend/ /app/
 
-RUN groupadd -r app && useradd -r -g app app && chown -R app:app /app
+RUN groupadd -r -g 1000 app && useradd -r -u 1000 -g app app && chown -R app:app /app
 USER app
 
 EXPOSE 8000
