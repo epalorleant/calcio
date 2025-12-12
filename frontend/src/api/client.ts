@@ -1,7 +1,8 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000",
+  // Prefer injected env; otherwise default to same-origin /api proxy.
+  baseURL: import.meta.env.VITE_API_URL ?? "/api",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
