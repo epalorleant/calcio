@@ -17,7 +17,8 @@ spec:
         - name: frontend
           image: ghcr.io/epalorleant/futsal-frontend:latest
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           env:
             - name: VITE_API_URL
               value: http://backend:8000
@@ -49,7 +50,8 @@ spec:
   selector:
     app: frontend
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8080
 ---
 apiVersion: route.openshift.io/v1
@@ -61,8 +63,9 @@ spec:
   to:
     kind: Service
     name: frontend
+    weight: 100
   port:
-    targetPort: 80
+    targetPort: 8080
   tls:
     termination: edge
   wildcardPolicy: None
