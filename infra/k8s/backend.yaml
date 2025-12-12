@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: default
+  namespace: calcio
 spec:
   replicas: 1
   selector:
@@ -22,10 +22,6 @@ spec:
             - secretRef:
                 name: backend-db-secret
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
           resources:
@@ -40,7 +36,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
-  namespace: default
+  namespace: calcio
 spec:
   selector:
     app: backend
@@ -52,7 +48,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: backend-db-secret
-  namespace: default
+  namespace: calcio
 type: Opaque
 stringData:
   DATABASE_URL: postgresql+psycopg2://calcio:calcio@db:5432/calcio
