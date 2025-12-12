@@ -1,7 +1,12 @@
-from fastapi import FastAPI
+import logging
+import time
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import matches, players, sessions
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("calcio")
 
 app = FastAPI(title="Calcio API")
 
@@ -12,6 +17,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    logger.info("%s %s -> %s (%.1f ms)", request.method, request.url.path, response.status_code, duration_ms)
+    return response
 
 def register_routers(application: FastAPI) -> None:
     application.include_router(players.router)
