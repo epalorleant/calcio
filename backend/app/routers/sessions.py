@@ -13,6 +13,7 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
 @router.post("/", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_session(session_in: schemas.SessionCreate, db: Session = Depends(get_db)) -> schemas.SessionRead:
     session = models.Session(
         date=session_in.date,
@@ -27,6 +28,7 @@ def create_session(session_in: schemas.SessionCreate, db: Session = Depends(get_
 
 
 @router.get("/", response_model=list[schemas.SessionRead])
+@router.get("", response_model=list[schemas.SessionRead], include_in_schema=False)
 def list_sessions(
     status_filter: Optional[models.SessionStatus] = Query(default=None, alias="status"),
     date_from: Optional[datetime] = None,

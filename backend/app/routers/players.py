@@ -8,6 +8,7 @@ router = APIRouter(prefix="/players", tags=["players"])
 
 
 @router.post("/", response_model=schemas.PlayerRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=schemas.PlayerRead, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_player(player_in: schemas.PlayerCreate, db: Session = Depends(get_db)) -> schemas.PlayerRead:
     player = models.Player(
         name=player_in.name,
@@ -21,6 +22,7 @@ def create_player(player_in: schemas.PlayerCreate, db: Session = Depends(get_db)
 
 
 @router.get("/", response_model=list[schemas.PlayerRead])
+@router.get("", response_model=list[schemas.PlayerRead], include_in_schema=False)
 def list_players(db: Session = Depends(get_db)) -> list[schemas.PlayerRead]:
     return db.query(models.Player).all()
 
