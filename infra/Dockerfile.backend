@@ -11,8 +11,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY backend/ /app/
 
-RUN groupadd -r -g 1000 app && useradd -r -u 1000 -g app app && chown -R app:app /app
-USER app
+# Use numeric UID/GID for OpenShift non-root enforcement.
+RUN groupadd -r -g 1000 app && useradd -r -u 1000 -g app app && chown -R 1000:1000 /app
+USER 1000
 
 EXPOSE 8000
 
