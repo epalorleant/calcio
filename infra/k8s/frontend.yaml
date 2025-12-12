@@ -21,7 +21,7 @@ spec:
               containerPort: 8080
           env:
             - name: VITE_API_URL
-              value: http://backend:8000
+              value: /api
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
