@@ -1,5 +1,4 @@
 import client from "./client";
-import type { Player } from "./players";
 
 export type SessionStatus = "PLANNED" | "COMPLETED" | "CANCELLED";
 export type Availability = "YES" | "NO" | "MAYBE";

@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent, CSSProperties } from "react";
 import { createPlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
 
 export default function PlayersPage() {

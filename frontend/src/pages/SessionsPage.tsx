@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent, CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
 

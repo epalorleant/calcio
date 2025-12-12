@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const client = axios.create({
   baseURL: "http://localhost:8000",
@@ -9,8 +9,8 @@ const client = axios.create({
 });
 
 client.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response: AxiosResponse) => response,
+  (error: AxiosError) => {
     // Basic logging to help during development.
     console.error("API error:", error);
     return Promise.reject(error);
