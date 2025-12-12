@@ -1,24 +1,22 @@
-name: Build and Push Images
+name: Build and push images
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 permissions:
   contents: read
-  packages: write
+  packages: write   # needed to push to GHCR
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -27,26 +25,33 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare tags
-        id: prep
-        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Define image names and tags
+        id: vars
+        run: |
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "BACKEND_IMAGE=ghcr.io/epalorleant/futsal-backend" >> $GITHUB_OUTPUT
+          echo "FRONTEND_IMAGE=ghcr.io/epalorleant/futsal-frontend" >> $GITHUB_OUTPUT
 
       - name: Build and push backend image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: infra/Dockerfile.backend
-          push: true
+          push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/epalorleant/futsal-backend:latest
-            ghcr.io/epalorleant/futsal-backend:sha-${{ steps.prep.outputs.short_sha }}
+            ${{ steps.vars.outputs.BACKEND_IMAGE }}:sha-${{ steps.vars.outputs.SHORT_SHA }}
+            ${{ steps.vars.outputs.BACKEND_IMAGE }}:latest
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: infra/Dockerfile.frontend
-          push: true
+          push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/epalorleant/futsal-frontend:latest
-            ghcr.io/epalorleant/futsal-frontend:sha-${{ steps.prep.outputs.short_sha }}
+            ${{ steps.vars.outputs.FRONTEND_IMAGE }}:sha-${{ steps.vars.outputs.SHORT_SHA }}
+            ${{ steps.vars.outputs.FRONTEND_IMAGE }}:latest
