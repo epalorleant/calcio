@@ -61,7 +61,7 @@ class Player(Base):
         back_populates="player", cascade="all, delete-orphan"
     )
     stats: Mapped[list["PlayerStats"]] = relationship(back_populates="player", cascade="all, delete-orphan")
-    rating: Mapped["PlayerRating" | None] = relationship(back_populates="player", uselist=False)
+    rating: Mapped[PlayerRating | None] = relationship(back_populates="player", uselist=False)
 
 
 class Session(Base):
@@ -84,7 +84,7 @@ class Session(Base):
     session_players: Mapped[list["SessionPlayer"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
     )
-    match: Mapped["Match" | None] = relationship(back_populates="session", uselist=False, cascade="all, delete-orphan")
+    match: Mapped[Match | None] = relationship(back_populates="session", uselist=False, cascade="all, delete-orphan")
 
 
 class SessionPlayer(Base):
