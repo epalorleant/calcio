@@ -36,9 +36,12 @@ spec:
               value: calcio
             - name: POSTGRES_PASSWORD
               value: calcio
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: db-data
               mountPath: /var/lib/postgresql/data
+              subPath: pgdata
           resources:
             requests:
               cpu: "100m"

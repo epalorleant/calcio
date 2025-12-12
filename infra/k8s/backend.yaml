@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -14,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: my-registry/futsal-backend:latest
+          image: ghcr.io/epalorleant/futsal-backend:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -37,6 +38,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
+  namespace: default
 spec:
   selector:
     app: backend
@@ -48,6 +50,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: backend-db-secret
+  namespace: default
 type: Opaque
 stringData:
   DATABASE_URL: postgresql+psycopg2://calcio:calcio@db:5432/calcio

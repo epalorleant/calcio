@@ -14,9 +14,9 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: my-registry/futsal-frontend:latest
+          image: ghcr.io/epalorleant/futsal-frontend:latest
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           env:
             - name: VITE_API_URL
               value: http://backend:8000
@@ -42,7 +42,7 @@ spec:
     app: frontend
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 8080
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
