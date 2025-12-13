@@ -55,6 +55,23 @@ def get_session(session_id: int, db: Session = Depends(get_db)) -> schemas.Sessi
     return session
 
 
+@router.patch("/{session_id}", response_model=schemas.SessionRead)
+def update_session(
+    session_id: int, session_in: schemas.SessionUpdate, db: Session = Depends(get_db)
+) -> schemas.SessionRead:
+    session = db.get(models.Session, session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    updates = session_in.dict(exclude_unset=True)
+    for field, value in updates.items():
+        setattr(session, field, value)
+
+    db.commit()
+    db.refresh(session)
+    return session
+
+
 class AvailabilityUpdate(BaseModel):
     player_id: int
     availability: models.Availability

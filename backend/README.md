@@ -10,3 +10,6 @@ FastAPI application for managing futsal sessions, players, and ratings.
 ```bash
 uvicorn app.main:app --reload
 ```
+
+If `DATABASE_URL` is not provided, the API will default to a local SQLite file database at
+`calcio.db` in the backend directory, which is useful for quick experiments and tests.

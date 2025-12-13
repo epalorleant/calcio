@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Iterable
-
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -22,10 +20,8 @@ def get_or_create_player_rating(db: Session, player_id: int) -> models.PlayerRat
     return rating
 
 
-def update_ratings_after_match(
-    db: Session, match: models.Match, player_stats: Iterable[models.PlayerStats]
-) -> None:
-    stats = list(player_stats)
+def update_ratings_after_match(db: Session, match: models.Match) -> None:
+    stats = list(match.stats)
     team_a_stats = [stat for stat in stats if stat.team == models.MatchTeam.A]
     team_b_stats = [stat for stat in stats if stat.team == models.MatchTeam.B]
 
