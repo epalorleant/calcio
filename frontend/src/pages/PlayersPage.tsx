@@ -18,6 +18,12 @@ export default function PlayersPage() {
       setLoading(true);
       setError(null);
       const data = await getPlayers();
+      if (!Array.isArray(data)) {
+        console.error("Unexpected players payload", data);
+        setError("Unexpected response from server.");
+        setPlayers([]);
+        return;
+      }
       setPlayers(data);
     } catch (err) {
       console.error(err);
