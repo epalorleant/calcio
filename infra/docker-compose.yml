@@ -1,0 +1,66 @@
+version: "3.9"
+
+networks:
+  calcio:
+    driver: bridge
+
+volumes:
+  pgdata:
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: calcio
+      POSTGRES_USER: calcio
+      POSTGRES_PASSWORD: calcio
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - calcio
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calcio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://calcio:calcio@db:5432/calcio
+      CALCIO_ENVIRONMENT: development
+      CALCIO_SECRET_KEY: dev-secret
+      CALCIO_CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "8000:8000"
+    networks:
+      - calcio
+    volumes:
+      - ../backend/app:/app/app
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "python - <<'PY'\nimport urllib.request, sys\ntry:\n    urllib.request.urlopen('http://localhost:8000/health', timeout=3)\nexcept Exception as exc:\n    sys.exit(1)\nPY"
+      ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        VITE_API_URL: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "8080:80"
+    networks:
+      - calcio

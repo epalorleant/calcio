@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calcio-backend"
+version = "0.1.0"
+description = "FastAPI backend for the Calcio futsal session manager"
+authors = [{ name = "Calcio" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy>=2.0",
+    "alembic>=1.12",
+    "pydantic>=2",
+    "pydantic-settings>=2",
+    "asyncpg",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+where = ["app"]
+include = ["app*"]

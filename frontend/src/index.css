@@ -1,0 +1,25 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: #1f2937;
+}
+
+body {
+  margin: 0;
+  background-color: #f8fafc;
+}
+
+a {
+  color: inherit;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #e2e8f0;
+}
+
+main {
+  padding: 1rem;
+}
