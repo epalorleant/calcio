@@ -68,6 +68,12 @@ export default function SessionDetailPage() {
       setError("Invalid session id.");
       return;
     }
+    setExistingMatch(null);
+    setMatchForm({ scoreTeamA: 0, scoreTeamB: 0, notes: "" });
+    setPlayerStats({});
+    setBenchTeams({});
+    setMatchError(null);
+    setMatchSuccess(null);
     try {
       setLoading(true);
       setError(null);
