@@ -56,11 +56,11 @@ class SessionPlayerRead(BaseModel):
         orm_mode = True
 
 
-class MatchCreate(BaseModel):
-    session_id: int
-    score_team_a: int = 0
-    score_team_b: int = 0
-    notes: Optional[str] = None
+class SessionUpdate(BaseModel):
+    date: Optional[datetime] = None
+    location: Optional[str] = None
+    max_players: Optional[int] = None
+    status: Optional[SessionStatus] = None
 
 
 class MatchRead(BaseModel):
@@ -72,6 +72,14 @@ class MatchRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PlayerStatsCreate(BaseModel):
+    player_id: int
+    team: MatchTeam
+    goals: int = 0
+    assists: int = 0
+    minutes_played: int = 0
 
 
 class PlayerStatsRead(BaseModel):
@@ -86,6 +94,18 @@ class PlayerStatsRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class MatchWithStatsCreate(BaseModel):
+    session_id: int
+    score_team_a: int
+    score_team_b: int
+    notes: Optional[str] = None
+    player_stats: list[PlayerStatsCreate]
+
+
+class MatchWithStatsRead(MatchRead):
+    stats: list[PlayerStatsRead]
 
 
 class PlayerRatingRead(BaseModel):

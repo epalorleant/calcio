@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
+import { isAxiosError } from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { getPlayers, type Player } from "../api/players";
 import {
@@ -11,6 +12,13 @@ import {
   type Session,
   type SessionPlayer,
 } from "../api/sessions";
+import {
+  createMatch,
+  getMatchForSession,
+  sessionTeamToMatchTeam,
+  type PlayerStatInput,
+  type MatchWithStats,
+} from "../api/matches";
 
 type Option = { value: number; label: string };
 
@@ -25,6 +33,18 @@ export default function SessionDetailPage() {
   const [balanced, setBalanced] = useState<BalancedTeamsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [matchForm, setMatchForm] = useState({
+    scoreTeamA: 0,
+    scoreTeamB: 0,
+    notes: "",
+  });
+  const [playerStats, setPlayerStats] = useState<
+    Record<number, { goals: number; assists: number; minutes_played: number }>
+  >({});
+  const [existingMatch, setExistingMatch] = useState<MatchWithStats | null>(null);
+  const [matchError, setMatchError] = useState<string | null>(null);
+  const [matchSuccess, setMatchSuccess] = useState<string | null>(null);
+  const [savingMatch, setSavingMatch] = useState(false);
 
   const [form, setForm] = useState<{
     player_id: number | "";
@@ -49,11 +69,15 @@ export default function SessionDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const [sessionData, playersData] = await Promise.all([getSession(sessionId), getPlayers()]);
+      const [sessionData, playersData, availabilityRes] = await Promise.all([
+        getSession(sessionId),
+        getPlayers(),
+        fetchAvailability(sessionId),
+      ]);
       setSession(sessionData);
       setPlayers(playersData);
-      const availabilityRes = await fetchAvailability(sessionId);
       setAvailabilityList(availabilityRes);
+      await loadMatch(sessionId);
     } catch (err) {
       console.error(err);
       setError("Failed to load session details.");
@@ -74,10 +98,57 @@ export default function SessionDetailPage() {
     return (await res.json()) as SessionPlayer[];
   };
 
+  const loadMatch = async (sid: number) => {
+    setExistingMatch(null);
+    setMatchSuccess(null);
+    try {
+      const matchData = await getMatchForSession(sid);
+      if (matchData) {
+        setExistingMatch(matchData);
+        setMatchForm({
+          scoreTeamA: matchData.score_team_a,
+          scoreTeamB: matchData.score_team_b,
+          notes: matchData.notes ?? "",
+        });
+        const statsMap: Record<number, { goals: number; assists: number; minutes_played: number }> = {};
+        matchData.stats.forEach((stat) => {
+          statsMap[stat.player_id] = {
+            goals: stat.goals,
+            assists: stat.assists,
+            minutes_played: stat.minutes_played,
+          };
+        });
+        setPlayerStats((prev) => ({ ...prev, ...statsMap }));
+      } else {
+        setMatchForm({ scoreTeamA: 0, scoreTeamB: 0, notes: "" });
+      }
+    } catch (err) {
+      console.error(err);
+      setMatchError("Failed to load match data.");
+    }
+  };
+
   useEffect(() => {
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
+
+  const teamAPlayers = availability.filter((entry) => entry.team === "A");
+  const teamBPlayers = availability.filter((entry) => entry.team === "B");
+
+  useEffect(() => {
+    const relevant = [...teamAPlayers, ...teamBPlayers];
+    if (relevant.length === 0) return;
+    setPlayerStats((prev) => {
+      const next = { ...prev };
+      relevant.forEach((entry) => {
+        if (!next[entry.player_id]) {
+          next[entry.player_id] = { goals: 0, assists: 0, minutes_played: 0 };
+        }
+      });
+      return next;
+    });
+  }, [teamAPlayers, teamBPlayers]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -98,6 +169,71 @@ export default function SessionDetailPage() {
     } catch (err) {
       console.error(err);
       setError("Failed to set availability.");
+    }
+  };
+
+  const handleStatChange = (
+    playerId: number,
+    field: "goals" | "assists" | "minutes_played",
+    value: number,
+  ) => {
+    setPlayerStats((prev) => ({
+      ...prev,
+      [playerId]: {
+        ...(prev[playerId] ?? { goals: 0, assists: 0, minutes_played: 0 }),
+        [field]: Number.isNaN(value) ? 0 : value,
+      },
+    }));
+  };
+
+  const handleSaveMatch = async () => {
+    if (!sessionId) return;
+    const participants = [...teamAPlayers, ...teamBPlayers];
+    if (participants.length === 0) {
+      setMatchError("Assign players to Team A or Team B before saving a result.");
+      return;
+    }
+    if (existingMatch) {
+      setMatchError("A match result already exists for this session.");
+      return;
+    }
+    setMatchError(null);
+    setMatchSuccess(null);
+    setSavingMatch(true);
+    try {
+      const payload = {
+        session_id: sessionId,
+        score_team_a: matchForm.scoreTeamA,
+        score_team_b: matchForm.scoreTeamB,
+        notes: matchForm.notes || undefined,
+        player_stats: participants
+          .map((entry) => {
+            const team = sessionTeamToMatchTeam(entry.team);
+            if (!team) return null;
+            const line = playerStats[entry.player_id];
+            return {
+              player_id: entry.player_id,
+              team,
+              goals: line?.goals ?? 0,
+              assists: line?.assists ?? 0,
+              minutes_played: line?.minutes_played ?? 0,
+            } satisfies PlayerStatInput;
+          })
+          .filter((stat): stat is PlayerStatInput => Boolean(stat)),
+      };
+
+      const savedMatch = await createMatch(payload);
+      setExistingMatch(savedMatch);
+      setMatchSuccess("Match result saved.");
+    } catch (err) {
+      console.error(err);
+      if (isAxiosError(err) && err.response?.data?.detail) {
+        setMatchError(String(err.response.data.detail));
+      } else {
+        setMatchError("Failed to save match result.");
+      }
+    } finally {
+      setSavingMatch(false);
     }
   };
 
@@ -233,6 +369,158 @@ export default function SessionDetailPage() {
         )}
         {balanced && <p>Balance score: {balanced.balance_score.toFixed(2)}</p>}
       </section>
+
+      <section style={styles.section}>
+        <h2 style={styles.subheading}>Match result</h2>
+        {matchError && <p style={styles.error}>{matchError}</p>}
+        {matchSuccess && <p style={styles.success}>{matchSuccess}</p>}
+        {existingMatch && (
+          <p style={styles.muted}>
+            A match result already exists for this session. Editing existing results is not yet
+            supported.
+          </p>
+        )}
+        <div style={styles.scoreRow}>
+          <label style={styles.field}>
+            <span style={styles.label}>Score Team A</span>
+            <input
+              type="number"
+              min={0}
+              style={styles.input}
+              value={matchForm.scoreTeamA}
+              onChange={(e) =>
+                setMatchForm((f) => ({ ...f, scoreTeamA: Number(e.target.value) || 0 }))
+              }
+            />
+          </label>
+          <label style={styles.field}>
+            <span style={styles.label}>Score Team B</span>
+            <input
+              type="number"
+              min={0}
+              style={styles.input}
+              value={matchForm.scoreTeamB}
+              onChange={(e) =>
+                setMatchForm((f) => ({ ...f, scoreTeamB: Number(e.target.value) || 0 }))
+              }
+            />
+          </label>
+          <label style={{ ...styles.field, flex: 1 }}>
+            <span style={styles.label}>Notes</span>
+            <textarea
+              style={styles.textarea}
+              rows={2}
+              value={matchForm.notes}
+              onChange={(e) => setMatchForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+          </label>
+        </div>
+
+        <div style={styles.teamsGrid}>
+          <MatchStatsTable
+            title="Team A"
+            players={teamAPlayers}
+            playerLookup={players}
+            playerStats={playerStats}
+            onStatChange={handleStatChange}
+          />
+          <MatchStatsTable
+            title="Team B"
+            players={teamBPlayers}
+            playerLookup={players}
+            playerStats={playerStats}
+            onStatChange={handleStatChange}
+          />
+        </div>
+
+        <button
+          style={{ ...styles.button, marginTop: "0.75rem" }}
+          onClick={() => void handleSaveMatch()}
+          disabled={savingMatch || !!existingMatch}
+        >
+          {savingMatch ? "Saving..." : "Save result"}
+        </button>
+      </section>
+    </div>
+  );
+}
+
+function MatchStatsTable({
+  title,
+  players,
+  playerLookup,
+  playerStats,
+  onStatChange,
+}: {
+  title: string;
+  players: SessionPlayer[];
+  playerLookup: Player[];
+  playerStats: Record<number, { goals: number; assists: number; minutes_played: number }>;
+  onStatChange: (
+    playerId: number,
+    field: "goals" | "assists" | "minutes_played",
+    value: number,
+  ) => void;
+}) {
+  return (
+    <div style={styles.card}>
+      <h3 style={styles.smallHeading}>{title}</h3>
+      {players.length === 0 && <p style={styles.muted}>Assign players to this team to record stats.</p>}
+      {players.length > 0 && (
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Player</th>
+              <th style={styles.th}>Goals</th>
+              <th style={styles.th}>Assists</th>
+              <th style={styles.th}>Minutes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((entry) => {
+              const playerName =
+                playerLookup.find((p) => p.id === entry.player_id)?.name || entry.player_id;
+              const stats = playerStats[entry.player_id] ?? { goals: 0, assists: 0, minutes_played: 0 };
+              return (
+                <tr key={entry.player_id}>
+                  <td style={styles.td}>{playerName}</td>
+                  <td style={styles.td}>
+                    <input
+                      type="number"
+                      min={0}
+                      style={styles.input}
+                      value={stats.goals}
+                      onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
+                    />
+                  </td>
+                  <td style={styles.td}>
+                    <input
+                      type="number"
+                      min={0}
+                      style={styles.input}
+                      value={stats.assists}
+                      onChange={(e) =>
+                        onStatChange(entry.player_id, "assists", Number(e.target.value))
+                      }
+                    />
+                  </td>
+                  <td style={styles.td}>
+                    <input
+                      type="number"
+                      min={0}
+                      style={styles.input}
+                      value={stats.minutes_played}
+                      onChange={(e) =>
+                        onStatChange(entry.player_id, "minutes_played", Number(e.target.value))
+                      }
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
@@ -304,6 +592,19 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid #d1d5db",
     borderRadius: "4px",
   },
+  input: {
+    width: "100%",
+    padding: "0.45rem 0.5rem",
+    border: "1px solid #d1d5db",
+    borderRadius: "4px",
+  },
+  textarea: {
+    width: "100%",
+    padding: "0.45rem 0.5rem",
+    border: "1px solid #d1d5db",
+    borderRadius: "4px",
+    resize: "vertical",
+  },
   checkboxRow: {
     display: "flex",
     alignItems: "center",
@@ -323,6 +624,10 @@ const styles: Record<string, CSSProperties> = {
   },
   error: {
     color: "#b91c1c",
+    marginBottom: "0.75rem",
+  },
+  success: {
+    color: "#065f46",
     marginBottom: "0.75rem",
   },
   table: {
@@ -356,6 +661,13 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
     gap: "0.75rem",
+  },
+  scoreRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "0.75rem",
+    alignItems: "end",
   },
   list: {
     listStyle: "none",
