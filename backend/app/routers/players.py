@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -23,8 +23,14 @@ def create_player(player_in: schemas.PlayerCreate, db: Session = Depends(get_db)
 
 @router.get("/", response_model=list[schemas.PlayerRead])
 @router.get("", response_model=list[schemas.PlayerRead], include_in_schema=False)
-def list_players(db: Session = Depends(get_db)) -> list[schemas.PlayerRead]:
-    return db.query(models.Player).all()
+def list_players(
+    active: bool | None = Query(default=None, description="Filter by active status"),
+    db: Session = Depends(get_db),
+) -> list[schemas.PlayerRead]:
+    query = db.query(models.Player)
+    if active is not None:
+        query = query.filter(models.Player.active == active)
+    return query.all()
 
 
 @router.get("/{player_id}", response_model=schemas.PlayerRead)
