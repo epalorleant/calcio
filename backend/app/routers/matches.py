@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..db import get_db
@@ -22,16 +22,23 @@ class MatchCompletionPayload(BaseModel):
 
 @router.post("/matches", response_model=schemas.MatchWithStatsRead, status_code=status.HTTP_201_CREATED)
 def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(get_db)) -> schemas.MatchWithStatsRead:
-    session = db.get(models.Session, payload.session_id)
+    session = (
+        db.query(models.Session)
+        .options(joinedload(models.Session.session_players))
+        .filter(models.Session.id == payload.session_id)
+        .first()
+    )
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     existing_match = db.query(models.Match).filter(models.Match.session_id == payload.session_id).first()
     if existing_match:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Match already exists for this session",
         )
+
+    session_roster = {sp.player_id: sp for sp in session.session_players}
 
     match = models.Match(
         session_id=payload.session_id,
@@ -43,11 +50,17 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
     db.flush()
 
     for stat_input in payload.player_stats:
-        player = db.get(models.Player, stat_input.player_id)
-        if not player:
+        if stat_input.team not in (models.MatchTeam.A, models.MatchTeam.B):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Player {stat_input.player_id} not found",
+                detail="Player stats team must be either A or B",
+            )
+
+        session_player = session_roster.get(stat_input.player_id)
+        if not session_player:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Player {stat_input.player_id} is not part of the session roster",
             )
 
         match.stats.append(
@@ -76,15 +89,38 @@ def get_match(match_id: int, db: Session = Depends(get_db)) -> schemas.MatchWith
     return match
 
 
-@router.get("/sessions/{session_id}/match", response_model=schemas.MatchWithStatsRead)
-def get_match_for_session(session_id: int, db: Session = Depends(get_db)) -> schemas.MatchWithStatsRead:
-    match = db.query(models.Match).filter(models.Match.session_id == session_id).first()
+@router.get("/sessions/{session_id}/match", response_model=schemas.SessionMatchRead)
+def get_match_for_session(session_id: int, db: Session = Depends(get_db)) -> schemas.SessionMatchRead:
+    match = (
+        db.query(models.Match)
+        .options(
+            joinedload(models.Match.stats),
+            joinedload(models.Match.session).joinedload(models.Session.session_players),
+        )
+        .filter(models.Match.session_id == session_id)
+        .first()
+    )
     if not match:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found for session",
         )
-    return match
+    session_players = match.session.session_players if match.session else []
+    team_a_players = [sp for sp in session_players if sp.team == models.SessionTeam.A]
+    team_b_players = [sp for sp in session_players if sp.team == models.SessionTeam.B]
+    bench_players = [sp for sp in session_players if sp.team not in (models.SessionTeam.A, models.SessionTeam.B)]
+
+    return schemas.SessionMatchRead(
+        id=match.id,
+        session_id=match.session_id,
+        score_team_a=match.score_team_a,
+        score_team_b=match.score_team_b,
+        notes=match.notes,
+        stats=match.stats,
+        team_a_players=team_a_players,
+        team_b_players=team_b_players,
+        bench_players=bench_players,
+    )
 
 
 @router.post("/matches/{match_id}/complete", response_model=schemas.MatchWithStatsRead)
