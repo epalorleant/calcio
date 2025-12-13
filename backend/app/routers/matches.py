@@ -20,8 +20,33 @@ class MatchCompletionPayload(BaseModel):
     player_stats: list[schemas.PlayerStatsCreate]
 
 
-@router.post("/matches", response_model=schemas.MatchWithStatsRead, status_code=status.HTTP_201_CREATED)
-def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(get_db)) -> schemas.MatchWithStatsRead:
+def _compose_session_match_response(
+    match: models.Match, session_players: Optional[list[models.SessionPlayer]] = None
+) -> schemas.SessionMatchRead:
+    players = (
+        session_players
+        if session_players is not None
+        else (match.session.session_players if match.session else [])
+    )
+    team_a_players = [sp for sp in players if sp.team == models.SessionTeam.A]
+    team_b_players = [sp for sp in players if sp.team == models.SessionTeam.B]
+    bench_players = [sp for sp in players if sp.team not in (models.SessionTeam.A, models.SessionTeam.B)]
+
+    return schemas.SessionMatchRead(
+        id=match.id,
+        session_id=match.session_id,
+        score_team_a=match.score_team_a,
+        score_team_b=match.score_team_b,
+        notes=match.notes,
+        stats=match.stats,
+        team_a_players=team_a_players,
+        team_b_players=team_b_players,
+        bench_players=bench_players,
+    )
+
+
+@router.post("/matches", response_model=schemas.SessionMatchRead, status_code=status.HTTP_201_CREATED)
+def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(get_db)) -> schemas.SessionMatchRead:
     session = (
         db.query(models.Session)
         .options(joinedload(models.Session.session_players))
@@ -78,7 +103,7 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
     ratings.update_ratings_after_match(db, match)
     db.commit()
     db.refresh(match)
-    return match
+    return _compose_session_match_response(match, session_players=session.session_players)
 
 
 @router.get("/matches/{match_id}", response_model=schemas.MatchWithStatsRead)
@@ -105,22 +130,7 @@ def get_match_for_session(session_id: int, db: Session = Depends(get_db)) -> sch
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Match not found for session",
         )
-    session_players = match.session.session_players if match.session else []
-    team_a_players = [sp for sp in session_players if sp.team == models.SessionTeam.A]
-    team_b_players = [sp for sp in session_players if sp.team == models.SessionTeam.B]
-    bench_players = [sp for sp in session_players if sp.team not in (models.SessionTeam.A, models.SessionTeam.B)]
-
-    return schemas.SessionMatchRead(
-        id=match.id,
-        session_id=match.session_id,
-        score_team_a=match.score_team_a,
-        score_team_b=match.score_team_b,
-        notes=match.notes,
-        stats=match.stats,
-        team_a_players=team_a_players,
-        team_b_players=team_b_players,
-        bench_players=bench_players,
-    )
+    return _compose_session_match_response(match)
 
 
 @router.post("/matches/{match_id}/complete", response_model=schemas.MatchWithStatsRead)

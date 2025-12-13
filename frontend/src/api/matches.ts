@@ -46,8 +46,8 @@ export interface MatchCreatePayload {
   player_stats: PlayerStatInput[];
 }
 
-export async function createMatch(payload: MatchCreatePayload): Promise<MatchWithStats> {
-  const { data } = await client.post<MatchWithStats>("/matches", payload);
+export async function createMatch(payload: MatchCreatePayload): Promise<SessionMatch> {
+  const { data } = await client.post<SessionMatch>("/matches", payload);
   return data;
 }
 
