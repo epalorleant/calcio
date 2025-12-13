@@ -3,6 +3,8 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from .db import engine
+from .models import Base
 from .routers import matches, players, sessions
 
 logging.basicConfig(level=logging.INFO)
@@ -31,10 +33,15 @@ def register_routers(application: FastAPI) -> None:
     application.include_router(sessions.router)
     application.include_router(matches.router)
 
-
 register_routers(app)
 
 
 @app.get("/healthz")
 async def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.on_event("startup")
+def init_db() -> None:
+    # Create tables if they do not exist. For production schema changes, use migrations.
+    Base.metadata.create_all(bind=engine)
