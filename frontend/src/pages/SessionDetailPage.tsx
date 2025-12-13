@@ -16,8 +16,9 @@ import {
   createMatch,
   getMatchForSession,
   sessionTeamToMatchTeam,
+  type MatchTeam,
   type PlayerStatInput,
-  type MatchWithStats,
+  type SessionMatch,
 } from "../api/matches";
 
 type Option = { value: number; label: string };
@@ -41,7 +42,8 @@ export default function SessionDetailPage() {
   const [playerStats, setPlayerStats] = useState<
     Record<number, { goals: number; assists: number; minutes_played: number }>
   >({});
-  const [existingMatch, setExistingMatch] = useState<MatchWithStats | null>(null);
+  const [existingMatch, setExistingMatch] = useState<SessionMatch | null>(null);
+  const [benchTeams, setBenchTeams] = useState<Record<number, MatchTeam | "">>({});
   const [matchError, setMatchError] = useState<string | null>(null);
   const [matchSuccess, setMatchSuccess] = useState<string | null>(null);
   const [savingMatch, setSavingMatch] = useState(false);
@@ -119,6 +121,12 @@ export default function SessionDetailPage() {
           };
         });
         setPlayerStats((prev) => ({ ...prev, ...statsMap }));
+        const benchSelection: Record<number, MatchTeam | ""> = {};
+        matchData.bench_players.forEach((sp) => {
+          const stat = matchData.stats.find((s) => s.player_id === sp.player_id);
+          benchSelection[sp.player_id] = stat?.team ?? "";
+        });
+        setBenchTeams((prev) => ({ ...prev, ...benchSelection }));
       } else {
         setMatchForm({ scoreTeamA: 0, scoreTeamB: 0, notes: "" });
       }
@@ -135,9 +143,10 @@ export default function SessionDetailPage() {
 
   const teamAPlayers = availability.filter((entry) => entry.team === "A");
   const teamBPlayers = availability.filter((entry) => entry.team === "B");
+  const benchPlayers = availability.filter((entry) => entry.team !== "A" && entry.team !== "B");
 
   useEffect(() => {
-    const relevant = [...teamAPlayers, ...teamBPlayers];
+    const relevant = [...teamAPlayers, ...teamBPlayers, ...benchPlayers];
     if (relevant.length === 0) return;
     setPlayerStats((prev) => {
       const next = { ...prev };
@@ -148,7 +157,20 @@ export default function SessionDetailPage() {
       });
       return next;
     });
-  }, [teamAPlayers, teamBPlayers]);
+  }, [teamAPlayers, teamBPlayers, benchPlayers]);
+
+  useEffect(() => {
+    if (benchPlayers.length === 0) return;
+    setBenchTeams((prev) => {
+      const next = { ...prev };
+      benchPlayers.forEach((entry) => {
+        if (!next[entry.player_id]) {
+          next[entry.player_id] = "";
+        }
+      });
+      return next;
+    });
+  }, [benchPlayers]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -188,13 +210,18 @@ export default function SessionDetailPage() {
 
   const handleSaveMatch = async () => {
     if (!sessionId) return;
-    const participants = [...teamAPlayers, ...teamBPlayers];
+    const participants = [...teamAPlayers, ...teamBPlayers, ...benchPlayers];
     if (participants.length === 0) {
-      setMatchError("Assign players to Team A or Team B before saving a result.");
+      setMatchError("Add players to the session before saving a result.");
       return;
     }
     if (existingMatch) {
       setMatchError("A match result already exists for this session.");
+      return;
+    }
+    const missingBenchTeams = benchPlayers.filter((entry) => !benchTeams[entry.player_id]);
+    if (missingBenchTeams.length > 0) {
+      setMatchError("Select which team each bench player appeared for.");
       return;
     }
     setMatchError(null);
@@ -208,12 +235,15 @@ export default function SessionDetailPage() {
         notes: matchForm.notes || undefined,
         player_stats: participants
           .map((entry) => {
-            const team = sessionTeamToMatchTeam(entry.team);
-            if (!team) return null;
+            const resolvedTeam =
+              entry.team === "A" || entry.team === "B"
+                ? sessionTeamToMatchTeam(entry.team)
+                : benchTeams[entry.player_id] ?? null;
+            if (!resolvedTeam) return null;
             const line = playerStats[entry.player_id];
             return {
               player_id: entry.player_id,
-              team,
+              team: resolvedTeam,
               goals: line?.goals ?? 0,
               assists: line?.assists ?? 0,
               minutes_played: line?.minutes_played ?? 0,
@@ -433,6 +463,17 @@ export default function SessionDetailPage() {
           />
         </div>
 
+        <BenchStatsTable
+          players={benchPlayers}
+          playerLookup={players}
+          playerStats={playerStats}
+          benchTeams={benchTeams}
+          onTeamChange={(playerId, team) =>
+            setBenchTeams((prev) => ({ ...prev, [playerId]: team }))
+          }
+          onStatChange={handleStatChange}
+        />
+
         <button
           style={{ ...styles.button, marginTop: "0.75rem" }}
           onClick={() => void handleSaveMatch()}
@@ -502,6 +543,99 @@ function MatchStatsTable({
                       onChange={(e) =>
                         onStatChange(entry.player_id, "assists", Number(e.target.value))
                       }
+                    />
+                  </td>
+                  <td style={styles.td}>
+                    <input
+                      type="number"
+                      min={0}
+                      style={styles.input}
+                      value={stats.minutes_played}
+                      onChange={(e) =>
+                        onStatChange(entry.player_id, "minutes_played", Number(e.target.value))
+                      }
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function BenchStatsTable({
+  players,
+  playerLookup,
+  playerStats,
+  benchTeams,
+  onTeamChange,
+  onStatChange,
+}: {
+  players: SessionPlayer[];
+  playerLookup: Player[];
+  playerStats: Record<number, { goals: number; assists: number; minutes_played: number }>;
+  benchTeams: Record<number, MatchTeam | "">;
+  onTeamChange: (playerId: number, team: MatchTeam | "") => void;
+  onStatChange: (
+    playerId: number,
+    field: "goals" | "assists" | "minutes_played",
+    value: number,
+  ) => void;
+}) {
+  return (
+    <div style={styles.card}>
+      <h3 style={styles.smallHeading}>Bench</h3>
+      {players.length === 0 && <p style={styles.muted}>No bench players assigned.</p>}
+      {players.length > 0 && (
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Player</th>
+              <th style={styles.th}>Played for</th>
+              <th style={styles.th}>Goals</th>
+              <th style={styles.th}>Assists</th>
+              <th style={styles.th}>Minutes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((entry) => {
+              const playerName =
+                playerLookup.find((p) => p.id === entry.player_id)?.name || entry.player_id;
+              const stats = playerStats[entry.player_id] ?? { goals: 0, assists: 0, minutes_played: 0 };
+              const selectedTeam = benchTeams[entry.player_id] ?? "";
+              return (
+                <tr key={entry.player_id}>
+                  <td style={styles.td}>{playerName}</td>
+                  <td style={styles.td}>
+                    <select
+                      style={styles.select}
+                      value={selectedTeam}
+                      onChange={(e) => onTeamChange(entry.player_id, e.target.value as MatchTeam | "")}
+                    >
+                      <option value="">Select team</option>
+                      <option value="A">Team A</option>
+                      <option value="B">Team B</option>
+                    </select>
+                  </td>
+                  <td style={styles.td}>
+                    <input
+                      type="number"
+                      min={0}
+                      style={styles.input}
+                      value={stats.goals}
+                      onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
+                    />
+                  </td>
+                  <td style={styles.td}>
+                    <input
+                      type="number"
+                      min={0}
+                      style={styles.input}
+                      value={stats.assists}
+                      onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
                     />
                   </td>
                   <td style={styles.td}>

@@ -1,8 +1,8 @@
 import axios from "axios";
 import client from "./client";
-import type { SessionTeam } from "./sessions";
+import type { SessionPlayer, SessionTeam } from "./sessions";
 
-type MatchTeam = "A" | "B";
+export type MatchTeam = "A" | "B";
 
 export interface PlayerStatsLine {
   id: number;
@@ -22,6 +22,12 @@ export interface MatchWithStats {
   score_team_b: number;
   notes: string | null;
   stats: PlayerStatsLine[];
+}
+
+export interface SessionMatch extends MatchWithStats {
+  team_a_players: SessionPlayer[];
+  team_b_players: SessionPlayer[];
+  bench_players: SessionPlayer[];
 }
 
 export interface PlayerStatInput {
@@ -45,9 +51,9 @@ export async function createMatch(payload: MatchCreatePayload): Promise<MatchWit
   return data;
 }
 
-export async function getMatchForSession(sessionId: number): Promise<MatchWithStats | null> {
+export async function getMatchForSession(sessionId: number): Promise<SessionMatch | null> {
   try {
-    const { data } = await client.get<MatchWithStats>(`/sessions/${sessionId}/match`);
+    const { data } = await client.get<SessionMatch>(`/sessions/${sessionId}/match`);
     return data;
   } catch (err) {
     if (axios.isAxiosError(err) && err.response?.status === 404) {
