@@ -108,12 +108,6 @@ class MatchWithStatsRead(MatchRead):
     stats: list[PlayerStatsRead]
 
 
-class SessionMatchRead(MatchWithStatsRead):
-    team_a_players: list[SessionPlayerRead]
-    team_b_players: list[SessionPlayerRead]
-    bench_players: list[SessionPlayerRead]
-
-
 class PlayerRatingRead(BaseModel):
     player_id: int
     overall_rating: float
