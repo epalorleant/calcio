@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..db import get_db
@@ -29,9 +29,11 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
     existing_match = db.query(models.Match).filter(models.Match.session_id == payload.session_id).first()
     if existing_match:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Match already exists for this session",
         )
+
+    session_roster = {sp.player_id: sp for sp in session.session_players}
 
     match = models.Match(
         session_id=payload.session_id,
@@ -47,7 +49,24 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
         if not player:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Player {stat_input.player_id} not found",
+                detail="Player stats team must be either A or B",
+            )
+
+        session_player = session_roster.get(stat_input.player_id)
+        if not session_player:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Player {stat_input.player_id} is not part of the session roster",
+            )
+
+        match.stats.append(
+            models.PlayerStats(
+                match_id=match.id,
+                player_id=stat_input.player_id,
+                team=stat_input.team,
+                goals=stat_input.goals,
+                assists=stat_input.assists,
+                minutes_played=stat_input.minutes_played,
             )
 
         match.stats.append(
@@ -65,7 +84,7 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
     ratings.update_ratings_after_match(db, match)
     db.commit()
     db.refresh(match)
-    return match
+    return _compose_session_match_response(match, session_players=session.session_players)
 
 
 @router.get("/matches/{match_id}", response_model=schemas.MatchWithStatsRead)
