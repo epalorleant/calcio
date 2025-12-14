@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -68,20 +68,10 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
                 assists=stat_input.assists,
                 minutes_played=stat_input.minutes_played,
             )
-
-        match.stats.append(
-            models.PlayerStats(
-                match_id=match.id,
-                player_id=stat_input.player_id,
-                team=stat_input.team,
-                goals=stat_input.goals,
-                assists=stat_input.assists,
-                minutes_played=stat_input.minutes_played,
-            )
         )
 
     db.flush()
-    ratings.update_ratings_after_match(db, match)
+    ratings.update_ratings_after_match(db, match, match.stats)
     db.commit()
     db.refresh(match)
     return _compose_session_match_response(match, session_players=session.session_players)
