@@ -1,9 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .models import Availability, MatchTeam, SessionStatus, SessionTeam
+
+
+class OrmBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PlayerCreate(BaseModel):
@@ -12,16 +16,13 @@ class PlayerCreate(BaseModel):
     active: bool = True
 
 
-class PlayerRead(BaseModel):
+class PlayerRead(OrmBase):
     id: int
     name: str
     preferred_position: Optional[str] = None
     active: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class SessionCreate(BaseModel):
@@ -40,20 +41,14 @@ class SessionRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
 
-
-class SessionPlayerRead(BaseModel):
+class SessionPlayerRead(OrmBase):
     id: int
     session_id: int
     player_id: int
     availability: Availability
     team: Optional[SessionTeam] = None
     is_goalkeeper: bool
-
-    class Config:
-        orm_mode = True
 
 
 class SessionUpdate(BaseModel):
@@ -63,15 +58,12 @@ class SessionUpdate(BaseModel):
     status: Optional[SessionStatus] = None
 
 
-class MatchRead(BaseModel):
+class MatchRead(OrmBase):
     id: int
     session_id: int
     score_team_a: int
     score_team_b: int
     notes: Optional[str] = None
-
-    class Config:
-        orm_mode = True
 
 
 class PlayerStatsCreate(BaseModel):
@@ -82,7 +74,7 @@ class PlayerStatsCreate(BaseModel):
     minutes_played: int = 0
 
 
-class PlayerStatsRead(BaseModel):
+class PlayerStatsRead(OrmBase):
     id: int
     match_id: int
     player_id: int
@@ -91,9 +83,6 @@ class PlayerStatsRead(BaseModel):
     assists: int
     minutes_played: int
     rating_after_match: Optional[int] = None
-
-    class Config:
-        orm_mode = True
 
 
 class MatchWithStatsCreate(BaseModel):
@@ -108,13 +97,10 @@ class MatchWithStatsRead(MatchRead):
     stats: list[PlayerStatsRead]
 
 
-class PlayerRatingRead(BaseModel):
+class PlayerRatingRead(OrmBase):
     player_id: int
     overall_rating: float
     last_updated_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class SessionMatchRead(MatchWithStatsRead):
