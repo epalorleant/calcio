@@ -59,10 +59,20 @@ export default function SessionDetailPage() {
     is_goalkeeper: false,
   });
 
+  const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
+
   const playerOptions: Option[] = useMemo(
-    () => players.map((p) => ({ value: p.id, label: p.name })),
-    [players],
+    () => players.filter((p) => !assignedPlayerIds.has(p.id)).map((p) => ({ value: p.id, label: p.name })),
+    [players, assignedPlayerIds],
   );
+
+  useEffect(() => {
+    // Drop any selections that have since been assigned.
+    setForm((prev) => ({
+      ...prev,
+      player_ids: prev.player_ids.filter((pid) => !assignedPlayerIds.has(pid)),
+    }));
+  }, [assignedPlayerIds]);
 
   const loadData = async () => {
     if (!sessionId) {
