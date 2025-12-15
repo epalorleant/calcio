@@ -154,6 +154,44 @@ export default function SessionDetailPage() {
   const teamBPlayers = availability.filter((entry) => entry.team === "B");
   const benchPlayers = availability.filter((entry) => entry.team !== "A" && entry.team !== "B");
 
+  const derivedBalanced = useMemo<BalancedTeamsResponse | null>(() => {
+    if (availability.length === 0) return null;
+
+    const resolvePlayer = (playerId: number) =>
+      players.find((p) => p.id === playerId) ?? ({ id: playerId, name: String(playerId) } as Player);
+
+    const toBalancedPlayer = (entry: SessionPlayer) => {
+      const player = resolvePlayer(entry.player_id);
+      return {
+        player_id: entry.player_id,
+        name: player.name,
+        // Rating not available on player payload here; keep zero so UI can render existing teams.
+        rating: 0,
+        is_goalkeeper: entry.is_goalkeeper,
+      };
+    };
+
+    const teamA = availability.filter((entry) => entry.team === "A").map(toBalancedPlayer);
+    const teamB = availability.filter((entry) => entry.team === "B").map(toBalancedPlayer);
+    const bench = availability
+      .filter((entry) => entry.team !== "A" && entry.team !== "B")
+      .map(toBalancedPlayer);
+
+    // If there are no team assignments yet, fall back to null so the UI can show the empty state.
+    if (teamA.length === 0 && teamB.length === 0 && bench.length === 0) {
+      return null;
+    }
+
+    return {
+      team_a: teamA,
+      team_b: teamB,
+      bench,
+      balance_score: 0,
+    };
+  }, [availability, players]);
+
+  const displayBalanced = balanced ?? derivedBalanced;
+
   useEffect(() => {
     const relevant = [...teamAPlayers, ...teamBPlayers, ...benchPlayers];
     if (relevant.length === 0) return;
@@ -401,16 +439,16 @@ export default function SessionDetailPage() {
             Generate balanced teams
           </button>
         </div>
-        {balanced ? (
+        {displayBalanced ? (
           <div style={styles.teamsGrid}>
-            <TeamCard title="Team A" players={balanced.team_a} />
-            <TeamCard title="Team B" players={balanced.team_b} />
-            <TeamCard title="Bench" players={balanced.bench} />
+            <TeamCard title="Team A" players={displayBalanced.team_a} />
+            <TeamCard title="Team B" players={displayBalanced.team_b} />
+            <TeamCard title="Bench" players={displayBalanced.bench} />
           </div>
         ) : (
           <p>No teams generated yet.</p>
         )}
-        {balanced && <p>Balance score: {balanced.balance_score.toFixed(2)}</p>}
+        {displayBalanced && <p>Balance score: {displayBalanced.balance_score.toFixed(2)}</p>}
       </section>
 
       <section style={styles.section}>
