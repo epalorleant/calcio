@@ -5,6 +5,10 @@ export type Player = {
   name: string;
   preferred_position?: string | null;
   active: boolean;
+  rating?: {
+    overall_rating: number;
+    last_updated_at: string;
+  } | null;
   created_at: string;
   updated_at: string;
 };

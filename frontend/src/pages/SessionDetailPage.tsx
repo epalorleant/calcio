@@ -165,8 +165,7 @@ export default function SessionDetailPage() {
       return {
         player_id: entry.player_id,
         name: player.name,
-        // Rating not available on player payload here; keep zero so UI can render existing teams.
-        rating: 0,
+        rating: player.rating?.overall_rating ?? 0,
         is_goalkeeper: entry.is_goalkeeper,
       };
     };

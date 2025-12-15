@@ -23,6 +23,7 @@ class PlayerRead(OrmBase):
     active: bool
     created_at: datetime
     updated_at: datetime
+    rating: Optional["PlayerRatingRead"] = None
 
 
 class SessionCreate(BaseModel):
@@ -107,3 +108,7 @@ class SessionMatchRead(MatchWithStatsRead):
     team_a_players: list[SessionPlayerRead]
     team_b_players: list[SessionPlayerRead]
     bench_players: list[SessionPlayerRead]
+
+
+# Forward refs
+PlayerRead.model_rebuild()
