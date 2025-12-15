@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
 import { isAxiosError } from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getPlayers, type Player } from "../api/players";
 import {
   generateBalancedTeams,
@@ -26,7 +26,6 @@ type Option = { value: number; label: string };
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const sessionId = Number(id);
 
   const [session, setSession] = useState<Session | null>(null);
@@ -289,9 +288,9 @@ export default function SessionDetailPage() {
 
   return (
     <div style={styles.container}>
-      <button style={styles.linkButton} onClick={() => navigate("/sessions")}>
+      <Link to="/sessions" style={styles.linkButton}>
         ← Back to sessions
-      </button>
+      </Link>
       <h1 style={styles.heading}>Session Details</h1>
       {loading && <p>Loading...</p>}
       {error && <p style={styles.error}>{error}</p>}
@@ -782,6 +781,7 @@ const styles: Record<string, CSSProperties> = {
     color: "#2563eb",
     cursor: "pointer",
     padding: 0,
+    textDecoration: "none",
   },
   sectionHeader: {
     display: "flex",
