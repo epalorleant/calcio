@@ -71,7 +71,7 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
         )
 
     db.flush()
-    ratings.update_ratings_after_match(db, match, match.stats)
+    ratings.update_ratings_after_match(db, match)
     db.commit()
     db.refresh(match)
     return _compose_session_match_response(match, session_players=session.session_players)
