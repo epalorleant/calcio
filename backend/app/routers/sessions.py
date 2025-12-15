@@ -78,6 +78,20 @@ class AvailabilityUpdate(BaseModel):
     is_goalkeeper: bool = False
 
 
+@router.get("/{session_id}/availability", response_model=list[schemas.SessionPlayerRead])
+def list_availability(session_id: int, db: Session = Depends(get_db)) -> list[schemas.SessionPlayerRead]:
+    session = db.get(models.Session, session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    session_players = (
+        db.query(models.SessionPlayer)
+        .filter(models.SessionPlayer.session_id == session_id)
+        .all()
+    )
+    return session_players
+
+
 @router.post("/{session_id}/availability", response_model=schemas.SessionPlayerRead)
 def set_availability(
     session_id: int,

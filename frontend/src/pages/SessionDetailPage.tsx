@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getPlayers, type Player } from "../api/players";
 import {
   generateBalancedTeams,
+  getAvailability,
   getSession,
   setAvailability,
   type Availability,
@@ -95,15 +96,7 @@ export default function SessionDetailPage() {
   };
 
   const fetchAvailability = async (sid: number) => {
-    // Using the same endpoint as the create set, but fetch via sessions detail to keep simple.
-    const res = await fetch(`http://localhost:8000/sessions/${sid}/availability`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) {
-      throw new Error("Failed to fetch availability");
-    }
-    return (await res.json()) as SessionPlayer[];
+    return getAvailability(sid);
   };
 
   const loadMatch = async (sid: number) => {

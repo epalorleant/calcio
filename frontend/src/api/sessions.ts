@@ -65,6 +65,11 @@ export async function getSession(id: number): Promise<Session> {
   return data;
 }
 
+export async function getAvailability(sessionId: number): Promise<SessionPlayer[]> {
+  const { data } = await client.get<SessionPlayer[]>(`/sessions/${sessionId}/availability`);
+  return data;
+}
+
 export async function setAvailability(sessionId: number, payload: AvailabilityPayload): Promise<SessionPlayer> {
   const { data } = await client.post<SessionPlayer>(`/sessions/${sessionId}/availability`, payload);
   return data;
