@@ -36,6 +36,10 @@ export interface AvailabilityPayload {
   is_goalkeeper?: boolean;
 }
 
+export interface AvailabilityBatchPayload {
+  entries: AvailabilityPayload[];
+}
+
 export interface BalancedPlayer {
   player_id: number;
   name: string;
@@ -75,7 +79,19 @@ export async function setAvailability(sessionId: number, payload: AvailabilityPa
   return data;
 }
 
+export async function setAvailabilityBatch(
+  sessionId: number,
+  payload: AvailabilityBatchPayload,
+): Promise<SessionPlayer[]> {
+  const { data } = await client.post<SessionPlayer[]>(`/sessions/${sessionId}/availability/batch`, payload);
+  return data;
+}
+
 export async function generateBalancedTeams(sessionId: number): Promise<BalancedTeamsResponse> {
   const { data } = await client.post<BalancedTeamsResponse>(`/sessions/${sessionId}/balanced-teams`);
   return data;
+}
+
+export async function deleteSession(id: number): Promise<void> {
+  await client.delete<void>(`/sessions/${id}`);
 }

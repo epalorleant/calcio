@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
-import { createPlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
+import { createPlayer, deletePlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -73,6 +73,19 @@ export default function PlayersPage() {
     }
   };
 
+  const handleDelete = async (player: Player) => {
+    const confirmed = window.confirm(`Delete player "${player.name}"?`);
+    if (!confirmed) return;
+    try {
+      setError(null);
+      await deletePlayer(player.id);
+      await fetchPlayers();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete player.");
+    }
+  };
+
   return (
     <div style={styles.container}>
       <h1 style={styles.heading}>Players</h1>
@@ -127,6 +140,12 @@ export default function PlayersPage() {
                 <td style={styles.td}>
                   <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
                     Set {player.active ? "Inactive" : "Active"}
+                  </button>
+                  <button
+                    style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
+                    onClick={() => void handleDelete(player)}
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>

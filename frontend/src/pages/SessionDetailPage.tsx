@@ -7,7 +7,7 @@ import {
   generateBalancedTeams,
   getAvailability,
   getSession,
-  setAvailability,
+  setAvailabilityBatch,
   type Availability,
   type BalancedTeamsResponse,
   type Session,
@@ -50,11 +50,11 @@ export default function SessionDetailPage() {
   const [savingMatch, setSavingMatch] = useState(false);
 
   const [form, setForm] = useState<{
-    player_id: number | "";
+    player_ids: number[];
     availability: Availability;
     is_goalkeeper: boolean;
   }>({
-    player_id: "",
+    player_ids: [],
     availability: "YES",
     is_goalkeeper: false,
   });
@@ -173,18 +173,20 @@ export default function SessionDetailPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!sessionId || form.player_id === "") {
-      setError("Select a player.");
+    if (!sessionId || form.player_ids.length === 0) {
+      setError("Select at least one player.");
       return;
     }
     try {
       setError(null);
-      await setAvailability(sessionId, {
-        player_id: Number(form.player_id),
-        availability: form.availability,
-        is_goalkeeper: form.is_goalkeeper,
+      await setAvailabilityBatch(sessionId, {
+        entries: form.player_ids.map((pid) => ({
+          player_id: pid,
+          availability: form.availability,
+          is_goalkeeper: form.is_goalkeeper,
+        })),
       });
-      setForm({ player_id: "", availability: "YES", is_goalkeeper: false });
+      setForm({ player_ids: [], availability: "YES", is_goalkeeper: false });
       const availabilityRes = await fetchAvailability(sessionId);
       setAvailabilityList(availabilityRes);
     } catch (err) {
@@ -308,10 +310,14 @@ export default function SessionDetailPage() {
             <span style={styles.label}>Player</span>
             <select
               style={styles.select}
-              value={form.player_id}
-              onChange={(e) => setForm((f) => ({ ...f, player_id: Number(e.target.value) || "" }))}
+              multiple
+              value={form.player_ids.map(String)}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions).map((opt) => Number(opt.value));
+                setForm((f) => ({ ...f, player_ids: selected }));
+              }}
             >
-              <option value="">Select a player</option>
+              <option value="" disabled>Select players</option>
               {playerOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}

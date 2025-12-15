@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -72,10 +72,23 @@ def update_session(
     return session
 
 
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(session_id: int, db: Session = Depends(get_db)) -> None:
+    session = db.get(models.Session, session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    db.delete(session)
+    db.commit()
+
+
 class AvailabilityUpdate(BaseModel):
     player_id: int
     availability: models.Availability
     is_goalkeeper: bool = False
+
+
+class AvailabilityBatch(BaseModel):
+    entries: List[AvailabilityUpdate]
 
 
 @router.get("/{session_id}/availability", response_model=list[schemas.SessionPlayerRead])
@@ -130,6 +143,50 @@ def set_availability(
     db.commit()
     db.refresh(session_player)
     return session_player
+
+
+@router.post("/{session_id}/availability/batch", response_model=list[schemas.SessionPlayerRead])
+def set_availability_batch(
+    session_id: int,
+    payload: AvailabilityBatch,
+    db: Session = Depends(get_db),
+) -> list[schemas.SessionPlayerRead]:
+    session = db.get(models.Session, session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    existing = {
+        sp.player_id: sp
+        for sp in db.query(models.SessionPlayer).filter(models.SessionPlayer.session_id == session_id).all()
+    }
+
+    updated_records: list[models.SessionPlayer] = []
+
+    for entry in payload.entries:
+        player = db.get(models.Player, entry.player_id)
+        if not player:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Player {entry.player_id} not found")
+
+        session_player = existing.get(entry.player_id)
+        if session_player:
+            session_player.availability = entry.availability
+            session_player.is_goalkeeper = entry.is_goalkeeper
+        else:
+            session_player = models.SessionPlayer(
+                session_id=session_id,
+                player_id=entry.player_id,
+                availability=entry.availability,
+                is_goalkeeper=entry.is_goalkeeper,
+            )
+            db.add(session_player)
+            existing[entry.player_id] = session_player
+
+        updated_records.append(session_player)
+
+    db.commit()
+    for record in updated_records:
+        db.refresh(record)
+    return updated_records
 
 
 class BalancedPlayer(BaseModel):

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
+import { createSession, deleteSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
 
 const defaultDateValue = () => new Date().toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
 
@@ -58,6 +58,19 @@ export default function SessionsPage() {
     } catch (err) {
       console.error(err);
       setError("Failed to create session.");
+    }
+  };
+
+  const handleDelete = async (sessionId: number) => {
+    const confirmed = window.confirm("Delete this session?");
+    if (!confirmed) return;
+    try {
+      setError(null);
+      await deleteSession(sessionId);
+      await loadSessions();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete session.");
     }
   };
 
@@ -130,6 +143,12 @@ export default function SessionsPage() {
                     onClick={() => navigate(`/sessions/${session.id}`)}
                   >
                     View details
+                  </button>
+                  <button
+                    style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
+                    onClick={() => void handleDelete(session.id)}
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>
