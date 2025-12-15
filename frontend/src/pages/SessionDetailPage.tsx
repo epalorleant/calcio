@@ -191,6 +191,9 @@ export default function SessionDetailPage() {
 
   const displayBalanced = balanced ?? derivedBalanced;
 
+  const hasExistingTeams = teamAPlayers.length > 0 || teamBPlayers.length > 0;
+  const canGenerateTeams = availability.filter((entry) => entry.availability === "YES").length >= 10;
+
   useEffect(() => {
     const relevant = [...teamAPlayers, ...teamBPlayers, ...benchPlayers];
     if (relevant.length === 0) return;
@@ -434,7 +437,12 @@ export default function SessionDetailPage() {
       <section style={styles.section}>
         <div style={styles.sectionHeader}>
           <h2 style={styles.subheading}>Balanced Teams</h2>
-          <button style={styles.button} onClick={() => void handleGenerate()}>
+          <button
+            style={{ ...styles.button, opacity: hasExistingTeams || !canGenerateTeams ? 0.6 : 1, cursor: hasExistingTeams || !canGenerateTeams ? "not-allowed" : "pointer" }}
+            onClick={() => void handleGenerate()}
+            disabled={hasExistingTeams || !canGenerateTeams}
+            title={!canGenerateTeams ? "Need at least 10 available players" : hasExistingTeams ? "Teams already assigned" : undefined}
+          >
             Generate balanced teams
           </button>
         </div>
