@@ -51,6 +51,11 @@ export async function createMatch(payload: MatchCreatePayload): Promise<SessionM
   return data;
 }
 
+export async function updateMatch(matchId: number, payload: MatchCreatePayload): Promise<SessionMatch> {
+  const { data } = await client.put<SessionMatch>(`/matches/${matchId}`, payload);
+  return data;
+}
+
 export async function getMatchForSession(sessionId: number): Promise<SessionMatch | null> {
   try {
     const { data } = await client.get<SessionMatch>(`/sessions/${sessionId}/match`);

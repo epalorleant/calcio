@@ -16,6 +16,7 @@ import {
 import {
   createMatch,
   getMatchForSession,
+  updateMatch,
   sessionTeamToMatchTeam,
   type MatchTeam,
   type PlayerStatInput,
@@ -213,10 +214,6 @@ export default function SessionDetailPage() {
       setMatchError("Add players to the session before saving a result.");
       return;
     }
-    if (existingMatch) {
-      setMatchError("A match result already exists for this session.");
-      return;
-    }
     const missingBenchTeams = benchPlayers.filter((entry) => !benchTeams[entry.player_id]);
     if (missingBenchTeams.length > 0) {
       setMatchError("Select which team each bench player appeared for.");
@@ -250,9 +247,11 @@ export default function SessionDetailPage() {
           .filter((stat): stat is PlayerStatInput => Boolean(stat)),
       };
 
-      const savedMatch = await createMatch(payload);
+      const savedMatch = existingMatch
+        ? await updateMatch(existingMatch.id, payload)
+        : await createMatch(payload);
       setExistingMatch(savedMatch);
-      setMatchSuccess("Match result saved.");
+      setMatchSuccess(existingMatch ? "Match result updated." : "Match result saved.");
     } catch (err) {
       console.error(err);
       if (isAxiosError(err) && err.response?.data?.detail) {
@@ -402,12 +401,6 @@ export default function SessionDetailPage() {
         <h2 style={styles.subheading}>Match result</h2>
         {matchError && <p style={styles.error}>{matchError}</p>}
         {matchSuccess && <p style={styles.success}>{matchSuccess}</p>}
-        {existingMatch && (
-          <p style={styles.muted}>
-            A match result already exists for this session. Editing existing results is not yet
-            supported.
-          </p>
-        )}
         <div style={styles.scoreRow}>
           <label style={styles.field}>
             <span style={styles.label}>Score Team A</span>
@@ -475,9 +468,9 @@ export default function SessionDetailPage() {
         <button
           style={{ ...styles.button, marginTop: "0.75rem" }}
           onClick={() => void handleSaveMatch()}
-          disabled={savingMatch || !!existingMatch}
+          disabled={savingMatch}
         >
-          {savingMatch ? "Saving..." : "Save result"}
+          {savingMatch ? "Saving..." : existingMatch ? "Update result" : "Save result"}
         </button>
       </section>
     </div>

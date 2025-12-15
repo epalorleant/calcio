@@ -115,3 +115,9 @@ class PlayerRatingRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class SessionMatchRead(MatchWithStatsRead):
+    team_a_players: list[SessionPlayerRead]
+    team_b_players: list[SessionPlayerRead]
+    bench_players: list[SessionPlayerRead]
