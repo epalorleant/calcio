@@ -11,8 +11,8 @@ function App() {
         <header className="topbar">
           <div className="brand">Calcio</div>
           <nav className="nav">
-            <Link to="/players">Players</Link>
-            <Link to="/sessions">Sessions</Link>
+            <Link to="/players" reloadDocument>Players</Link>
+            <Link to="/sessions" reloadDocument>Sessions</Link>
           </nav>
         </header>
 

@@ -271,6 +271,28 @@ export default function SessionDetailPage() {
       setMatchError("Select which team each bench player appeared for.");
       return;
     }
+
+    let teamAGoals = 0;
+    let teamBGoals = 0;
+    const resolveTeam = (entry: SessionPlayer): MatchTeam | null =>
+      entry.team === "A" || entry.team === "B"
+        ? sessionTeamToMatchTeam(entry.team)
+        : benchTeams[entry.player_id] ?? null;
+
+    for (const entry of participants) {
+      const resolvedTeam = resolveTeam(entry);
+      if (!resolvedTeam) continue;
+      const line = playerStats[entry.player_id];
+      const goals = line?.goals ?? 0;
+      if (resolvedTeam === "A") teamAGoals += goals;
+      if (resolvedTeam === "B") teamBGoals += goals;
+    }
+
+    if (teamAGoals !== matchForm.scoreTeamA || teamBGoals !== matchForm.scoreTeamB) {
+      setMatchError("Team scores must match the sum of individual goals.");
+      return;
+    }
+
     setMatchError(null);
     setMatchSuccess(null);
     setSavingMatch(true);
@@ -339,7 +361,7 @@ export default function SessionDetailPage() {
 
   return (
     <div style={styles.container}>
-      <Link to="/sessions" style={styles.linkButton}>
+      <Link to="/sessions" style={styles.linkButton} reloadDocument>
         ← Back to sessions
       </Link>
       <h1 style={styles.heading}>Session Details</h1>
