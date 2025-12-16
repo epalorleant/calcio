@@ -127,6 +127,7 @@ export default function PlayersPage() {
             <tr>
               <th style={styles.th}>Name</th>
               <th style={styles.th}>Preferred Position</th>
+              <th style={styles.th}>Rating</th>
               <th style={styles.th}>Active</th>
               <th style={styles.th}>Actions</th>
             </tr>
@@ -136,6 +137,9 @@ export default function PlayersPage() {
               <tr key={player.id}>
                 <td style={styles.td}>{player.name}</td>
                 <td style={styles.td}>{player.preferred_position || "—"}</td>
+                <td style={styles.td}>
+                  {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
+                </td>
                 <td style={styles.td}>{player.active ? "Yes" : "No"}</td>
                 <td style={styles.td}>
                   <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
