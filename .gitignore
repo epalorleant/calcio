@@ -1,0 +1,33 @@
+# General
+.DS_Store
+.env
+.env.*
+.idea/
+*.log
+.vscode/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+*.local
+
+# Python / backend
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build artifacts
+*.egg-info/
+*.pyproj
+
+# Editors
+*.swp
+*.swo
