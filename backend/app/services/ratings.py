@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from .. import models
 
 
-K_FACTOR = 20
-GOAL_BONUS = 0.5
+K_FACTOR = 50
+GOAL_BONUS = 2.5
 BASE_RATING = 1000.0
 
 
