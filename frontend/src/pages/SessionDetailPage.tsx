@@ -44,7 +44,7 @@ export default function SessionDetailPage() {
     Record<number, { goals: number; assists: number; minutes_played: number }>
   >({});
   const [existingMatch, setExistingMatch] = useState<SessionMatch | null>(null);
-  const [benchTeams, setBenchTeams] = useState<Record<number, MatchTeam | "">>({});
+  const [benchTeams, setBenchTeams] = useState<Record<number, MatchTeam | null>>({});
   const [matchError, setMatchError] = useState<string | null>(null);
   const [matchSuccess, setMatchSuccess] = useState<string | null>(null);
   const [savingMatch, setSavingMatch] = useState(false);
@@ -130,10 +130,10 @@ export default function SessionDetailPage() {
           };
         });
         setPlayerStats((prev) => ({ ...prev, ...statsMap }));
-        const benchSelection: Record<number, MatchTeam | ""> = {};
+        const benchSelection: Record<number, MatchTeam | null> = {};
         matchData.bench_players.forEach((sp) => {
           const stat = matchData.stats.find((s) => s.player_id === sp.player_id);
-          benchSelection[sp.player_id] = stat?.team ?? "";
+          benchSelection[sp.player_id] = stat?.team ?? null;
         });
         setBenchTeams((prev) => ({ ...prev, ...benchSelection }));
       } else {
@@ -213,8 +213,8 @@ export default function SessionDetailPage() {
     setBenchTeams((prev) => {
       const next = { ...prev };
       benchPlayers.forEach((entry) => {
-        if (!next[entry.player_id]) {
-          next[entry.player_id] = "";
+        if (next[entry.player_id] === undefined) {
+          next[entry.player_id] = null;
         }
       });
       return next;
@@ -274,10 +274,10 @@ export default function SessionDetailPage() {
 
     let teamAGoals = 0;
     let teamBGoals = 0;
-    const resolveTeam = (entry: SessionPlayer): MatchTeam | null =>
-      entry.team === "A" || entry.team === "B"
-        ? sessionTeamToMatchTeam(entry.team)
-        : benchTeams[entry.player_id] ?? null;
+  const resolveTeam = (entry: SessionPlayer): MatchTeam | null =>
+    entry.team === "A" || entry.team === "B"
+      ? sessionTeamToMatchTeam(entry.team)
+      : benchTeams[entry.player_id] ?? null;
 
     for (const entry of participants) {
       const resolvedTeam = resolveTeam(entry);
@@ -651,8 +651,8 @@ function BenchStatsTable({
   players: SessionPlayer[];
   playerLookup: Player[];
   playerStats: Record<number, { goals: number; assists: number; minutes_played: number }>;
-  benchTeams: Record<number, MatchTeam | "">;
-  onTeamChange: (playerId: number, team: MatchTeam | "") => void;
+  benchTeams: Record<number, MatchTeam | null>;
+  onTeamChange: (playerId: number, team: MatchTeam | null) => void;
   onStatChange: (
     playerId: number,
     field: "goals" | "assists" | "minutes_played",
@@ -687,7 +687,10 @@ function BenchStatsTable({
                     <select
                       style={styles.select}
                       value={selectedTeam}
-                      onChange={(e) => onTeamChange(entry.player_id, e.target.value as MatchTeam | "")}
+                      onChange={(e) => {
+                        const value = e.target.value as MatchTeam | "";
+                        onTeamChange(entry.player_id, value === "" ? null : value);
+                      }}
                     >
                       <option value="">Select team</option>
                       <option value="A">Team A</option>
