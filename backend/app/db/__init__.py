@@ -3,8 +3,9 @@ from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-DEFAULT_SQLITE_URL = "sqlite+aiosqlite:///./calcio.db"
-DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_SQLITE_URL)
+from ..core.config import settings
+
+DATABASE_URL = os.getenv("DATABASE_URL", settings.database_url)
 
 
 def _to_async_url(url: str) -> str:
@@ -19,9 +20,9 @@ def _to_async_url(url: str) -> str:
 
 DATABASE_URL_ASYNC = _to_async_url(DATABASE_URL)
 
-pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
-max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "20"))
-pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+pool_size = int(os.getenv("DB_POOL_SIZE", str(settings.db_pool_size)))
+max_overflow = int(os.getenv("DB_MAX_OVERFLOW", str(settings.db_max_overflow)))
+pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", str(settings.db_pool_timeout)))
 
 engine_kwargs = {
     "future": True,

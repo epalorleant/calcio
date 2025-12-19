@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .core.config import settings
 from .db import engine
 from .models import Base
 from .routers import matches, players, sessions
@@ -11,14 +12,14 @@ from .routers import matches, players, sessions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("calcio")
 
-app = FastAPI(title="Calcio API")
+app = FastAPI(title=settings.api_title, version=settings.api_version, debug=settings.debug)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
 )
 
 @app.middleware("http")
@@ -44,7 +45,6 @@ async def healthcheck() -> dict[str, str]:
 
 @app.on_event("startup")
 async def init_db() -> None:
-    # Create tables if they do not exist. For production schema changes, use migrations.
-    if isinstance(engine, AsyncEngine):
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+    # Database schema is managed by Alembic migrations.
+    # Run migrations with: alembic upgrade head
+    pass

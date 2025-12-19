@@ -226,8 +226,11 @@ async def generate_balanced_session_teams(session_id: int, db: AsyncSession = De
 
     players = [sp.player for sp in session_players]
     ratings = {sp.player_id: (sp.player.rating.overall_rating if sp.player.rating else 1000.0) for sp in session_players}
+    goalkeeper_flags = {sp.player_id: sp.is_goalkeeper for sp in session_players}
 
-    team_a_ids, team_b_ids, bench_ids = team_balance.generate_balanced_teams(players, ratings)
+    team_a_ids, team_b_ids, bench_ids = team_balance.generate_balanced_teams(
+        players, ratings, team_size=5, goalkeeper_flags=goalkeeper_flags
+    )
 
     id_to_sp = {sp.player_id: sp for sp in session_players}
     for pid in team_a_ids:

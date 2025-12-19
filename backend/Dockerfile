@@ -9,4 +9,12 @@ RUN pip install --no-cache-dir .
 # Copy application source
 COPY app ./app
 
+# Copy Alembic configuration for migrations
+COPY alembic.ini ./
+COPY alembic ./alembic
+
+# Ensure alembic is in PATH (should already be from pip install)
+# Verify alembic is available
+RUN which alembic || (echo "Alembic not found in PATH" && exit 1)
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

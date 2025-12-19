@@ -61,8 +61,8 @@ async def create_match(payload: schemas.MatchWithStatsCreate, db: AsyncSession =
         player = await db.get(models.Player, stat_input.player_id)
         if not player:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Player stats team must be either A or B",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Player {stat_input.player_id} not found",
             )
 
         session_player = session_roster.get(stat_input.player_id)
