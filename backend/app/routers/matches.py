@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -120,6 +120,7 @@ async def update_match(
     match.score_team_b = payload.score_team_b
     match.notes = payload.notes
 
+    # Clear existing stats - SQLAlchemy will track deletions properly
     match.stats.clear()
 
     for stat_input in payload.player_stats:

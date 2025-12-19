@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -80,7 +80,10 @@ async def delete_session(session_id: int, db: AsyncSession = Depends(get_db)) ->
     session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    db.delete(session)
+    
+    # Use delete statement for async SQLAlchemy
+    stmt = delete(models.Session).where(models.Session.id == session_id)
+    await db.execute(stmt)
     await db.commit()
 
 
