@@ -146,7 +146,7 @@ async def create_session_from_template(
         )
     
     session = await template_service.TemplateService.create_session_from_template(
-        template, payload.date, payload.max_players, db
+        template, payload.date, db, payload.max_players
     )
     return session
 
@@ -170,7 +170,7 @@ async def create_sessions_from_template(
     sessions = []
     for date in payload.dates:
         session = await template_service.TemplateService.create_session_from_template(
-            template, date, payload.max_players, db
+            template, date, db, payload.max_players
         )
         sessions.append(session)
     

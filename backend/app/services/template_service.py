@@ -15,8 +15,8 @@ class TemplateService:
     async def create_session_from_template(
         template: models.SessionTemplate,
         date: datetime,
-        max_players: Optional[int] = None,
         db: AsyncSession,
+        max_players: Optional[int] = None,
     ) -> models.Session:
         """Create a single session from a template."""
         # Combine the date with the template's time
@@ -97,7 +97,7 @@ class TemplateService:
         while current_date <= template.recurrence_end and session_count < max_sessions:
             if current_date.date() not in existing_dates:
                 session = await TemplateService.create_session_from_template(
-                    template, current_date, None, db
+                    template, current_date, db, None
                 )
                 sessions.append(session)
                 session_count += 1
