@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .models import Availability, MatchTeam, SessionStatus, SessionTeam
+from .models import Availability, MatchTeam, RecurrenceType, SessionStatus, SessionTeam
 
 
 class OrmBase(BaseModel):
@@ -146,6 +146,84 @@ class SessionMatchRead(MatchWithStatsRead):
     team_a_players: list[SessionPlayerRead]
     team_b_players: list[SessionPlayerRead]
     bench_players: list[SessionPlayerRead]
+
+
+class SessionTemplateCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255, description="Template name")
+    description: Optional[str] = Field(None, max_length=1000, description="Template description")
+    location: str = Field(..., min_length=1, max_length=255, description="Session location")
+    time_of_day: time = Field(..., description="Time of day (HH:MM format)")
+    day_of_week: Optional[int] = Field(None, ge=0, le=6, description="Day of week (0=Monday, 6=Sunday, None for one-time)")
+    max_players: int = Field(10, ge=2, le=30, description="Maximum number of players")
+    recurrence_type: Optional[RecurrenceType] = Field(None, description="Recurrence pattern")
+    recurrence_start: Optional[datetime] = Field(None, description="Recurrence start date")
+    recurrence_end: Optional[datetime] = Field(None, description="Recurrence end date")
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Location cannot be empty")
+        return v.strip()
+
+    @field_validator("recurrence_end")
+    @classmethod
+    def validate_recurrence_dates(cls, v: Optional[datetime], info) -> Optional[datetime]:
+        if v and "recurrence_start" in info.data and info.data["recurrence_start"]:
+            if v < info.data["recurrence_start"]:
+                raise ValueError("Recurrence end date must be after start date")
+        return v
+
+
+class SessionTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=1000)
+    location: Optional[str] = Field(None, min_length=1, max_length=255)
+    time_of_day: Optional[time] = None
+    day_of_week: Optional[int] = Field(None, ge=0, le=6)
+    max_players: Optional[int] = Field(None, ge=2, le=30)
+    active: Optional[bool] = None
+    recurrence_type: Optional[RecurrenceType] = None
+    recurrence_start: Optional[datetime] = None
+    recurrence_end: Optional[datetime] = None
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and (not v or not v.strip()):
+            raise ValueError("Location cannot be empty")
+        return v.strip() if v else None
+
+
+class SessionTemplateRead(OrmBase):
+    id: int
+    name: str
+    description: Optional[str]
+    location: str
+    time_of_day: time
+    day_of_week: Optional[int]
+    max_players: int
+    active: bool
+    recurrence_type: Optional[RecurrenceType]
+    recurrence_start: Optional[datetime]
+    recurrence_end: Optional[datetime]
+    last_generated: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+
+class SessionTemplateWithCount(SessionTemplateRead):
+    session_count: int = 0
+
+
+class CreateSessionFromTemplate(BaseModel):
+    date: datetime = Field(..., description="Session date and time")
+    max_players: Optional[int] = Field(None, ge=2, le=30, description="Override template max_players")
+
+
+class CreateSessionsFromTemplate(BaseModel):
+    dates: list[datetime] = Field(..., min_length=1, description="List of dates for sessions")
+    max_players: Optional[int] = Field(None, ge=2, le=30, description="Override template max_players")
 
 
 # Forward refs

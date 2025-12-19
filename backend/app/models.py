@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    Time,
     UniqueConstraint,
     func,
 )
@@ -41,6 +42,13 @@ class SessionTeam(enum.Enum):
 class MatchTeam(enum.Enum):
     A = "A"
     B = "B"
+
+
+class RecurrenceType(enum.Enum):
+    NONE = "NONE"
+    WEEKLY = "WEEKLY"
+    BIWEEKLY = "BIWEEKLY"
+    MONTHLY = "MONTHLY"
 
 
 class Player(Base):
@@ -81,10 +89,13 @@ class Session(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
+    template_id: Mapped[int | None] = mapped_column(ForeignKey("session_templates.id"), nullable=True)
+
     session_players: Mapped[list["SessionPlayer"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
     )
     match: Mapped[Match | None] = relationship(back_populates="session", uselist=False, cascade="all, delete-orphan")
+    template: Mapped["SessionTemplate | None"] = relationship(back_populates="sessions")
 
 
 class SessionPlayer(Base):

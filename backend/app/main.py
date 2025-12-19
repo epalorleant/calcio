@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .core.config import settings
 from .db import engine
 from .models import Base
-from .routers import matches, players, sessions
+from .routers import matches, players, sessions, templates
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("calcio")
@@ -34,6 +34,7 @@ def register_routers(application: FastAPI) -> None:
     application.include_router(players.router)
     application.include_router(sessions.router)
     application.include_router(matches.router)
+    application.include_router(templates.router)
 
 register_routers(app)
 

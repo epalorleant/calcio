@@ -2,6 +2,7 @@ import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import PlayersPage from "./pages/PlayersPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionsPage from "./pages/SessionsPage";
+import TemplatesPage from "./pages/TemplatesPage";
 import "./App.css";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
           <nav className="nav">
             <Link to="/players" reloadDocument>Players</Link>
             <Link to="/sessions" reloadDocument>Sessions</Link>
+            <Link to="/templates" reloadDocument>Templates</Link>
           </nav>
         </header>
 
@@ -22,6 +24,7 @@ function App() {
             <Route path="/players" element={<PlayersPage />} />
             <Route path="/sessions" element={<SessionsPage />} />
             <Route path="/sessions/:id" element={<SessionDetailPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
           </Routes>
         </main>
       </div>
