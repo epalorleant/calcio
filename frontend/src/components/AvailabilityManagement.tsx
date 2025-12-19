@@ -15,8 +15,6 @@ interface AvailabilityManagementProps {
   onFormChange: (form: { player_ids: number[]; availability: Availability; is_goalkeeper: boolean }) => void;
   onSubmit: (e: FormEvent) => Promise<void>;
   error: string | null;
-  sessionId: number;
-  onAvailabilityUpdate: () => Promise<void>;
 }
 
 export const AvailabilityManagement = memo(function AvailabilityManagement({
@@ -26,8 +24,6 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   onFormChange,
   onSubmit,
   error,
-  sessionId,
-  onAvailabilityUpdate,
 }: AvailabilityManagementProps) {
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
 
@@ -134,44 +130,47 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
         <h3 style={commonStyles.smallHeading}>Current Availability</h3>
         {availability.length === 0 && <p>No entries yet.</p>}
         {availability.length > 0 && (
-          <table style={commonStyles.table}>
-            <thead>
-              <tr>
-                <th style={commonStyles.th}>Player</th>
-                <th style={commonStyles.th}>Availability</th>
-                <th style={commonStyles.th}>Team</th>
-                <th style={commonStyles.th}>GK</th>
-                <th style={commonStyles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {availability.map((entry) => {
-                const playerName = players.find((p) => p.id === entry.player_id)?.name || entry.player_id;
-                return (
-                  <tr key={entry.id}>
-                    <td style={commonStyles.td}>{playerName}</td>
-                    <td style={commonStyles.td}>{entry.availability}</td>
-                    <td style={commonStyles.td}>{entry.team ?? "—"}</td>
-                    <td style={commonStyles.td}>{entry.is_goalkeeper ? "Yes" : "No"}</td>
-                    <td style={commonStyles.td}>
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(entry)}
-                        style={{
-                          ...commonStyles.button,
-                          backgroundColor: "#6b7280",
-                          padding: "0.35rem 0.6rem",
-                          fontSize: "0.85rem",
-                        }}
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ ...commonStyles.table, width: "100%", minWidth: "600px" }}>
+              <thead>
+                <tr>
+                  <th style={commonStyles.th}>Player</th>
+                  <th style={commonStyles.th}>Availability</th>
+                  <th style={commonStyles.th}>Team</th>
+                  <th style={commonStyles.th}>GK</th>
+                  <th style={{ ...commonStyles.th, width: "100px", textAlign: "center" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {availability.map((entry) => {
+                  const playerName = players.find((p) => p.id === entry.player_id)?.name || entry.player_id;
+                  return (
+                    <tr key={entry.id}>
+                      <td style={commonStyles.td}>{playerName}</td>
+                      <td style={commonStyles.td}>{entry.availability}</td>
+                      <td style={commonStyles.td}>{entry.team ?? "—"}</td>
+                      <td style={commonStyles.td}>{entry.is_goalkeeper ? "Yes" : "No"}</td>
+                      <td style={{ ...commonStyles.td, textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(entry)}
+                          style={{
+                            ...commonStyles.button,
+                            backgroundColor: "#6b7280",
+                            padding: "0.4rem 0.75rem",
+                            fontSize: "0.875rem",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </section>
