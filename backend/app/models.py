@@ -95,7 +95,9 @@ class Session(Base):
         back_populates="session", cascade="all, delete-orphan"
     )
     match: Mapped[Match | None] = relationship(back_populates="session", uselist=False, cascade="all, delete-orphan")
-    template: Mapped["SessionTemplate | None"] = relationship(back_populates="sessions")
+    template: Mapped["SessionTemplate | None"] = relationship(
+        "SessionTemplate", back_populates="sessions", lazy="select"
+    )
 
 
 class SessionPlayer(Base):
@@ -157,3 +159,32 @@ class PlayerRating(Base):
     )
 
     player: Mapped["Player"] = relationship(back_populates="rating")
+
+
+class SessionTemplate(Base):
+    __tablename__ = "session_templates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    location: Mapped[str] = mapped_column(String(255), nullable=False)
+    time_of_day: Mapped[datetime.time] = mapped_column(Time, nullable=False)
+    day_of_week: Mapped[int | None] = mapped_column(Integer)  # 0=Monday, 6=Sunday, None for one-time
+    max_players: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    
+    recurrence_type: Mapped[RecurrenceType | None] = mapped_column(Enum(RecurrenceType), nullable=True)
+    recurrence_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    recurrence_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_generated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session", back_populates="template"
+    )
