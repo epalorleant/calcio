@@ -77,159 +77,161 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ ...commonStyles.form, maxWidth: "600px" }}>
-      <label style={commonStyles.field}>
-        <span style={commonStyles.label}>Name *</span>
-        <input
-          type="text"
-          style={commonStyles.input}
-          value={form.name}
-          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-          required
-          maxLength={255}
-        />
-      </label>
-
-      <label style={commonStyles.field}>
-        <span style={commonStyles.label}>Description</span>
-        <textarea
-          style={commonStyles.textarea}
-          rows={3}
-          value={form.description || ""}
-          onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value || null }))}
-          maxLength={1000}
-        />
-      </label>
-
-      <label style={commonStyles.field}>
-        <span style={commonStyles.label}>Location *</span>
-        <input
-          type="text"
-          style={commonStyles.input}
-          value={form.location}
-          onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-          required
-          maxLength={255}
-        />
-      </label>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+    <form onSubmit={handleSubmit} style={{ ...commonStyles.form, maxWidth: "600px", width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Time *</span>
+          <span style={commonStyles.label}>Name *</span>
           <input
-            type="time"
+            type="text"
             style={commonStyles.input}
-            value={form.time_of_day}
-            onChange={(e) => setForm((prev) => ({ ...prev, time_of_day: e.target.value }))}
+            value={form.name}
+            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+            required
+            maxLength={255}
+          />
+        </label>
+
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>Description</span>
+          <textarea
+            style={commonStyles.textarea}
+            rows={3}
+            value={form.description || ""}
+            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value || null }))}
+            maxLength={1000}
+          />
+        </label>
+
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>Location *</span>
+          <input
+            type="text"
+            style={commonStyles.input}
+            value={form.location}
+            onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+            required
+            maxLength={255}
+          />
+        </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+          <label style={commonStyles.field}>
+            <span style={commonStyles.label}>Time *</span>
+            <input
+              type="time"
+              style={commonStyles.input}
+              value={form.time_of_day}
+              onChange={(e) => setForm((prev) => ({ ...prev, time_of_day: e.target.value }))}
+              required
+            />
+          </label>
+
+          <label style={commonStyles.field}>
+            <span style={commonStyles.label}>Day of Week</span>
+            <select
+              style={commonStyles.select}
+              value={form.day_of_week === null ? "" : form.day_of_week}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  day_of_week: e.target.value === "" ? null : Number(e.target.value),
+                }))
+              }
+            >
+              {dayNames.map((day) => (
+                <option key={day.value ?? "null"} value={day.value ?? ""}>
+                  {day.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>Max Players *</span>
+          <input
+            type="number"
+            min={2}
+            max={30}
+            style={commonStyles.input}
+            value={form.max_players}
+            onChange={(e) => setForm((prev) => ({ ...prev, max_players: Number(e.target.value) }))}
             required
           />
         </label>
 
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Day of Week</span>
+          <span style={commonStyles.label}>Recurrence Type</span>
           <select
             style={commonStyles.select}
-            value={form.day_of_week === null ? "" : form.day_of_week}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                day_of_week: e.target.value === "" ? null : Number(e.target.value),
-              }))
-            }
+            value={recurrenceType}
+            onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType | "")}
           >
-            {dayNames.map((day) => (
-              <option key={day.value ?? "null"} value={day.value ?? ""}>
-                {day.label}
-              </option>
-            ))}
+            <option value="">None (One-time template)</option>
+            <option value="WEEKLY">Weekly</option>
+            <option value="BIWEEKLY">Bi-weekly</option>
+            <option value="MONTHLY">Monthly</option>
           </select>
         </label>
-      </div>
 
-      <label style={commonStyles.field}>
-        <span style={commonStyles.label}>Max Players *</span>
-        <input
-          type="number"
-          min={2}
-          max={30}
-          style={commonStyles.input}
-          value={form.max_players}
-          onChange={(e) => setForm((prev) => ({ ...prev, max_players: Number(e.target.value) }))}
-          required
-        />
-      </label>
+        {recurrenceType && recurrenceType !== "NONE" && (
+          <>
+            <label style={commonStyles.field}>
+              <span style={commonStyles.label}>Recurrence Start Date *</span>
+              <input
+                type="datetime-local"
+                style={commonStyles.input}
+                value={
+                  form.recurrence_start
+                    ? new Date(form.recurrence_start).toISOString().slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    recurrence_start: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  }))
+                }
+                required
+              />
+            </label>
 
-      <label style={commonStyles.field}>
-        <span style={commonStyles.label}>Recurrence Type</span>
-        <select
-          style={commonStyles.select}
-          value={recurrenceType}
-          onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType | "")}
-        >
-          <option value="">None (One-time template)</option>
-          <option value="WEEKLY">Weekly</option>
-          <option value="BIWEEKLY">Bi-weekly</option>
-          <option value="MONTHLY">Monthly</option>
-        </select>
-      </label>
+            <label style={commonStyles.field}>
+              <span style={commonStyles.label}>Recurrence End Date *</span>
+              <input
+                type="datetime-local"
+                style={commonStyles.input}
+                value={
+                  form.recurrence_end
+                    ? new Date(form.recurrence_end).toISOString().slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    recurrence_end: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  }))
+                }
+                required
+              />
+            </label>
+          </>
+        )}
 
-      {recurrenceType && recurrenceType !== "NONE" && (
-        <>
-          <label style={commonStyles.field}>
-            <span style={commonStyles.label}>Recurrence Start Date *</span>
-            <input
-              type="datetime-local"
-              style={commonStyles.input}
-              value={
-                form.recurrence_start
-                  ? new Date(form.recurrence_start).toISOString().slice(0, 16)
-                  : ""
-              }
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  recurrence_start: e.target.value ? new Date(e.target.value).toISOString() : null,
-                }))
-              }
-              required
-            />
-          </label>
+        {error && <p style={commonStyles.error}>{error}</p>}
 
-          <label style={commonStyles.field}>
-            <span style={commonStyles.label}>Recurrence End Date *</span>
-            <input
-              type="datetime-local"
-              style={commonStyles.input}
-              value={
-                form.recurrence_end
-                  ? new Date(form.recurrence_end).toISOString().slice(0, 16)
-                  : ""
-              }
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  recurrence_end: e.target.value ? new Date(e.target.value).toISOString() : null,
-                }))
-              }
-              required
-            />
-          </label>
-        </>
-      )}
-
-      {error && <p style={commonStyles.error}>{error}</p>}
-
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-        <button type="submit" style={commonStyles.button} disabled={loading}>
-          {loading ? "Saving..." : template ? "Update Template" : "Create Template"}
-        </button>
-        <button
-          type="button"
-          style={{ ...commonStyles.button, backgroundColor: "#6b7280" }}
-          onClick={onCancel}
-        >
-          Cancel
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+          <button type="submit" style={commonStyles.button} disabled={loading}>
+            {loading ? "Saving..." : template ? "Update Template" : "Create Template"}
+          </button>
+          <button
+            type="button"
+            style={{ ...commonStyles.button, backgroundColor: "#6b7280" }}
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </form>
   );
