@@ -47,6 +47,9 @@ export const commonStyles: Record<string, CSSProperties> = {
     padding: "0.5rem",
     border: "1px solid #d1d5db",
     borderRadius: "4px",
+    backgroundColor: "#fff",
+    fontSize: "0.95rem",
+    fontFamily: "inherit",
   },
   input: {
     width: "100%",

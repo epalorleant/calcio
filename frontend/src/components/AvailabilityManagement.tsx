@@ -37,26 +37,40 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
       <h2 style={commonStyles.subheading}>Manage Availability</h2>
       {error && <p style={commonStyles.error}>{error}</p>}
       <form onSubmit={onSubmit} style={commonStyles.form}>
-        <label style={commonStyles.field}>
+        <label style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
           <span style={commonStyles.label}>Player</span>
           <select
-            style={commonStyles.select}
+            style={{
+              ...commonStyles.select,
+              minHeight: "120px",
+              width: "100%",
+              padding: "0.5rem",
+            }}
             multiple
+            size={Math.min(playerOptions.length + 1, 6)}
             value={form.player_ids.map(String)}
             onChange={(e) => {
               const selected = Array.from(e.target.selectedOptions).map((opt) => Number(opt.value));
               onFormChange({ ...form, player_ids: selected });
             }}
           >
-            <option value="" disabled>
-              Select players
-            </option>
-            {playerOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
+            {playerOptions.length === 0 ? (
+              <option value="" disabled>
+                All players have been assigned
               </option>
-            ))}
+            ) : (
+              playerOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))
+            )}
           </select>
+          {form.player_ids.length > 0 && (
+            <p style={{ ...commonStyles.muted, marginTop: "0.25rem", fontSize: "0.85rem" }}>
+              {form.player_ids.length} player{form.player_ids.length !== 1 ? "s" : ""} selected
+            </p>
+          )}
         </label>
 
         <label style={commonStyles.field}>
