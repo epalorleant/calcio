@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from .. import models, schemas
 from ..db import get_db
@@ -18,7 +19,13 @@ async def create_player(player_in: schemas.PlayerCreate, db: AsyncSession = Depe
     )
     db.add(player)
     await db.commit()
-    await db.refresh(player)
+    # Reload player with rating relationship to avoid lazy loading issues
+    result = await db.execute(
+        select(models.Player)
+        .options(selectinload(models.Player.rating))
+        .where(models.Player.id == player.id)
+    )
+    player = result.scalars().first()
     return player
 
 
@@ -28,7 +35,7 @@ async def list_players(
     active: bool | None = Query(default=None, description="Filter by active status"),
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.PlayerRead]:
-    stmt = select(models.Player)
+    stmt = select(models.Player).options(selectinload(models.Player.rating))
     if active is not None:
         stmt = stmt.where(models.Player.active == active)
     result = await db.execute(stmt)
@@ -37,7 +44,12 @@ async def list_players(
 
 @router.get("/{player_id}", response_model=schemas.PlayerRead)
 async def get_player(player_id: int, db: AsyncSession = Depends(get_db)) -> schemas.PlayerRead:
-    player = await db.get(models.Player, player_id)
+    result = await db.execute(
+        select(models.Player)
+        .options(selectinload(models.Player.rating))
+        .where(models.Player.id == player_id)
+    )
+    player = result.scalars().first()
     if not player:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return player
@@ -47,7 +59,12 @@ async def get_player(player_id: int, db: AsyncSession = Depends(get_db)) -> sche
 async def update_player(
     player_id: int, player_in: schemas.PlayerCreate, db: AsyncSession = Depends(get_db)
 ) -> schemas.PlayerRead:
-    player = await db.get(models.Player, player_id)
+    result = await db.execute(
+        select(models.Player)
+        .options(selectinload(models.Player.rating))
+        .where(models.Player.id == player_id)
+    )
+    player = result.scalars().first()
     if not player:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
 
@@ -56,17 +73,34 @@ async def update_player(
     player.active = player_in.active
 
     await db.commit()
-    await db.refresh(player)
+    # Reload player with rating relationship to avoid lazy loading issues
+    result = await db.execute(
+        select(models.Player)
+        .options(selectinload(models.Player.rating))
+        .where(models.Player.id == player.id)
+    )
+    player = result.scalars().first()
     return player
 
 
 @router.delete("/{player_id}", response_model=schemas.PlayerRead)
 async def soft_delete_player(player_id: int, db: AsyncSession = Depends(get_db)) -> schemas.PlayerRead:
-    player = await db.get(models.Player, player_id)
+    result = await db.execute(
+        select(models.Player)
+        .options(selectinload(models.Player.rating))
+        .where(models.Player.id == player_id)
+    )
+    player = result.scalars().first()
     if not player:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
 
     player.active = False
     await db.commit()
-    await db.refresh(player)
+    # Reload player with rating relationship to avoid lazy loading issues
+    result = await db.execute(
+        select(models.Player)
+        .options(selectinload(models.Player.rating))
+        .where(models.Player.id == player.id)
+    )
+    player = result.scalars().first()
     return player
