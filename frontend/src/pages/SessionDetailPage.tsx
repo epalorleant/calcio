@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent, CSSProperties } from "react";
+import type { FormEvent } from "react";
 import { isAxiosError } from "axios";
 import { Link, useParams } from "react-router-dom";
 import { getPlayers, type Player } from "../api/players";
@@ -22,8 +22,10 @@ import {
   type PlayerStatInput,
   type SessionMatch,
 } from "../api/matches";
-
-type Option = { value: number; label: string };
+import { AvailabilityManagement } from "../components/AvailabilityManagement";
+import { BalancedTeamsSection } from "../components/BalancedTeamsSection";
+import { MatchResultSection } from "../components/MatchResultSection";
+import { commonStyles } from "../styles/common";
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -60,11 +62,6 @@ export default function SessionDetailPage() {
   });
 
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
-
-  const playerOptions: Option[] = useMemo(
-    () => players.filter((p) => !assignedPlayerIds.has(p.id)).map((p) => ({ value: p.id, label: p.name })),
-    [players, assignedPlayerIds],
-  );
 
   useEffect(() => {
     // Drop any selections that have since been assigned.
@@ -274,10 +271,10 @@ export default function SessionDetailPage() {
 
     let teamAGoals = 0;
     let teamBGoals = 0;
-  const resolveTeam = (entry: SessionPlayer): MatchTeam | null =>
-    entry.team === "A" || entry.team === "B"
-      ? sessionTeamToMatchTeam(entry.team)
-      : benchTeams[entry.player_id] ?? null;
+    const resolveTeam = (entry: SessionPlayer): MatchTeam | null =>
+      entry.team === "A" || entry.team === "B"
+        ? sessionTeamToMatchTeam(entry.team)
+        : benchTeams[entry.player_id] ?? null;
 
     for (const entry of participants) {
       const resolvedTeam = resolveTeam(entry);
@@ -360,540 +357,60 @@ export default function SessionDetailPage() {
   }
 
   return (
-    <div style={styles.container}>
-      <Link to="/sessions" style={styles.linkButton} reloadDocument>
+    <div style={commonStyles.container}>
+      <Link to="/sessions" style={commonStyles.linkButton} reloadDocument>
         ← Back to sessions
       </Link>
-      <h1 style={styles.heading}>Session Details</h1>
+      <h1 style={commonStyles.heading}>Session Details</h1>
       {loading && <p>Loading...</p>}
-      {error && <p style={styles.error}>{error}</p>}
+      {error && <p style={commonStyles.error}>{error}</p>}
       {session && (
-        <div style={styles.card}>
-          <p><strong>Date:</strong> {new Date(session.date).toLocaleString()}</p>
-          <p><strong>Location:</strong> {session.location}</p>
-          <p><strong>Status:</strong> {session.status}</p>
+        <div style={commonStyles.card}>
+          <p>
+            <strong>Date:</strong> {new Date(session.date).toLocaleString()}
+          </p>
+          <p>
+            <strong>Location:</strong> {session.location}
+          </p>
+          <p>
+            <strong>Status:</strong> {session.status}
+          </p>
         </div>
       )}
 
-      <section style={styles.section}>
-        <h2 style={styles.subheading}>Manage Availability</h2>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.field}>
-            <span style={styles.label}>Player</span>
-            <select
-              style={styles.select}
-              multiple
-              value={form.player_ids.map(String)}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions).map((opt) => Number(opt.value));
-                setForm((f) => ({ ...f, player_ids: selected }));
-              }}
-            >
-              <option value="" disabled>Select players</option>
-              {playerOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+      <AvailabilityManagement
+        players={players}
+        availability={availability}
+        form={form}
+        onFormChange={setForm}
+        onSubmit={handleSubmit}
+        error={error}
+      />
 
-          <label style={styles.field}>
-            <span style={styles.label}>Availability</span>
-            <select
-              style={styles.select}
-              value={form.availability}
-              onChange={(e) => setForm((f) => ({ ...f, availability: e.target.value as Availability }))}
-            >
-              <option value="YES">Yes</option>
-              <option value="NO">No</option>
-              <option value="MAYBE">Maybe</option>
-            </select>
-          </label>
+      <BalancedTeamsSection
+        balanced={displayBalanced}
+        hasExistingTeams={hasExistingTeams}
+        canGenerateTeams={canGenerateTeams}
+        onGenerate={handleGenerate}
+      />
 
-          <label style={styles.checkboxRow}>
-            <input
-              type="checkbox"
-              checked={form.is_goalkeeper}
-              onChange={(e) => setForm((f) => ({ ...f, is_goalkeeper: e.target.checked }))}
-            />
-            <span style={styles.checkboxLabel}>Goalkeeper</span>
-          </label>
-
-          <button style={styles.button} type="submit">
-            Save Availability
-          </button>
-        </form>
-
-        <div>
-          <h3 style={styles.smallHeading}>Current Availability</h3>
-          {availability.length === 0 && <p>No entries yet.</p>}
-          {availability.length > 0 && (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Player</th>
-                  <th style={styles.th}>Availability</th>
-                  <th style={styles.th}>Team</th>
-                  <th style={styles.th}>GK</th>
-                </tr>
-              </thead>
-              <tbody>
-                {availability.map((entry) => {
-                  const playerName = players.find((p) => p.id === entry.player_id)?.name || entry.player_id;
-                  return (
-                    <tr key={entry.id}>
-                      <td style={styles.td}>{playerName}</td>
-                      <td style={styles.td}>{entry.availability}</td>
-                      <td style={styles.td}>{entry.team ?? "—"}</td>
-                      <td style={styles.td}>{entry.is_goalkeeper ? "Yes" : "No"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
-
-      <section style={styles.section}>
-        <div style={styles.sectionHeader}>
-          <h2 style={styles.subheading}>Balanced Teams</h2>
-          <button
-            style={{ ...styles.button, opacity: hasExistingTeams || !canGenerateTeams ? 0.6 : 1, cursor: hasExistingTeams || !canGenerateTeams ? "not-allowed" : "pointer" }}
-            onClick={() => void handleGenerate()}
-            disabled={hasExistingTeams || !canGenerateTeams}
-            title={!canGenerateTeams ? "Need at least 10 available players" : hasExistingTeams ? "Teams already assigned" : undefined}
-          >
-            Generate balanced teams
-          </button>
-        </div>
-        {displayBalanced ? (
-          <div style={styles.teamsGrid}>
-            <TeamCard title="Team A" players={displayBalanced.team_a} />
-            <TeamCard title="Team B" players={displayBalanced.team_b} />
-            <TeamCard title="Bench" players={displayBalanced.bench} />
-          </div>
-        ) : (
-          <p>No teams generated yet.</p>
-        )}
-        {displayBalanced && <p>Balance score: {displayBalanced.balance_score.toFixed(2)}</p>}
-      </section>
-
-      <section style={styles.section}>
-        <h2 style={styles.subheading}>Match result</h2>
-        {matchError && <p style={styles.error}>{matchError}</p>}
-        {matchSuccess && <p style={styles.success}>{matchSuccess}</p>}
-        <div style={styles.scoreRow}>
-          <label style={styles.field}>
-            <span style={styles.label}>Score Team A</span>
-            <input
-              type="number"
-              min={0}
-              style={styles.input}
-              value={matchForm.scoreTeamA}
-              onChange={(e) =>
-                setMatchForm((f) => ({ ...f, scoreTeamA: Number(e.target.value) || 0 }))
-              }
-            />
-          </label>
-          <label style={styles.field}>
-            <span style={styles.label}>Score Team B</span>
-            <input
-              type="number"
-              min={0}
-              style={styles.input}
-              value={matchForm.scoreTeamB}
-              onChange={(e) =>
-                setMatchForm((f) => ({ ...f, scoreTeamB: Number(e.target.value) || 0 }))
-              }
-            />
-          </label>
-          <label style={{ ...styles.field, flex: 1 }}>
-            <span style={styles.label}>Notes</span>
-            <textarea
-              style={styles.textarea}
-              rows={2}
-              value={matchForm.notes}
-              onChange={(e) => setMatchForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-          </label>
-        </div>
-
-        <div style={styles.teamsGrid}>
-          <MatchStatsTable
-            title="Team A"
-            players={teamAPlayers}
-            playerLookup={players}
-            playerStats={playerStats}
-            onStatChange={handleStatChange}
-          />
-          <MatchStatsTable
-            title="Team B"
-            players={teamBPlayers}
-            playerLookup={players}
-            playerStats={playerStats}
-            onStatChange={handleStatChange}
-          />
-        </div>
-
-        <BenchStatsTable
-          players={benchPlayers}
-          playerLookup={players}
-          playerStats={playerStats}
-          benchTeams={benchTeams}
-          onTeamChange={(playerId, team) =>
-            setBenchTeams((prev) => ({ ...prev, [playerId]: team }))
-          }
-          onStatChange={handleStatChange}
-        />
-
-        <button
-          style={{ ...styles.button, marginTop: "0.75rem" }}
-          onClick={() => void handleSaveMatch()}
-          disabled={savingMatch}
-        >
-          {savingMatch ? "Saving..." : existingMatch ? "Update result" : "Save result"}
-        </button>
-      </section>
+      <MatchResultSection
+        matchForm={matchForm}
+        onMatchFormChange={setMatchForm}
+        teamAPlayers={teamAPlayers}
+        teamBPlayers={teamBPlayers}
+        benchPlayers={benchPlayers}
+        players={players}
+        playerStats={playerStats}
+        benchTeams={benchTeams}
+        onStatChange={handleStatChange}
+        onBenchTeamChange={(playerId, team) => setBenchTeams((prev) => ({ ...prev, [playerId]: team }))}
+        onSaveMatch={handleSaveMatch}
+        savingMatch={savingMatch}
+        existingMatch={!!existingMatch}
+        matchError={matchError}
+        matchSuccess={matchSuccess}
+      />
     </div>
   );
 }
-
-function MatchStatsTable({
-  title,
-  players,
-  playerLookup,
-  playerStats,
-  onStatChange,
-}: {
-  title: string;
-  players: SessionPlayer[];
-  playerLookup: Player[];
-  playerStats: Record<number, { goals: number; assists: number; minutes_played: number }>;
-  onStatChange: (
-    playerId: number,
-    field: "goals" | "assists" | "minutes_played",
-    value: number,
-  ) => void;
-}) {
-  return (
-    <div style={styles.card}>
-      <h3 style={styles.smallHeading}>{title}</h3>
-      {players.length === 0 && <p style={styles.muted}>Assign players to this team to record stats.</p>}
-      {players.length > 0 && (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Player</th>
-              <th style={styles.th}>Goals</th>
-              <th style={styles.th}>Assists</th>
-              <th style={styles.th}>Minutes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((entry) => {
-              const playerName =
-                playerLookup.find((p) => p.id === entry.player_id)?.name || entry.player_id;
-              const stats = playerStats[entry.player_id] ?? { goals: 0, assists: 0, minutes_played: 0 };
-              return (
-                <tr key={entry.player_id}>
-                  <td style={styles.td}>{playerName}</td>
-                  <td style={styles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={styles.input}
-                      value={stats.goals}
-                      onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
-                    />
-                  </td>
-                  <td style={styles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={styles.input}
-                      value={stats.assists}
-                      onChange={(e) =>
-                        onStatChange(entry.player_id, "assists", Number(e.target.value))
-                      }
-                    />
-                  </td>
-                  <td style={styles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={styles.input}
-                      value={stats.minutes_played}
-                      onChange={(e) =>
-                        onStatChange(entry.player_id, "minutes_played", Number(e.target.value))
-                      }
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-function BenchStatsTable({
-  players,
-  playerLookup,
-  playerStats,
-  benchTeams,
-  onTeamChange,
-  onStatChange,
-}: {
-  players: SessionPlayer[];
-  playerLookup: Player[];
-  playerStats: Record<number, { goals: number; assists: number; minutes_played: number }>;
-  benchTeams: Record<number, MatchTeam | null>;
-  onTeamChange: (playerId: number, team: MatchTeam | null) => void;
-  onStatChange: (
-    playerId: number,
-    field: "goals" | "assists" | "minutes_played",
-    value: number,
-  ) => void;
-}) {
-  return (
-    <div style={styles.card}>
-      <h3 style={styles.smallHeading}>Bench</h3>
-      {players.length === 0 && <p style={styles.muted}>No bench players assigned.</p>}
-      {players.length > 0 && (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Player</th>
-              <th style={styles.th}>Played for</th>
-              <th style={styles.th}>Goals</th>
-              <th style={styles.th}>Assists</th>
-              <th style={styles.th}>Minutes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((entry) => {
-              const playerName =
-                playerLookup.find((p) => p.id === entry.player_id)?.name || entry.player_id;
-              const stats = playerStats[entry.player_id] ?? { goals: 0, assists: 0, minutes_played: 0 };
-              const selectedTeam = benchTeams[entry.player_id] ?? "";
-              return (
-                <tr key={entry.player_id}>
-                  <td style={styles.td}>{playerName}</td>
-                  <td style={styles.td}>
-                    <select
-                      style={styles.select}
-                      value={selectedTeam}
-                      onChange={(e) => {
-                        const value = e.target.value as MatchTeam | "";
-                        onTeamChange(entry.player_id, value === "" ? null : value);
-                      }}
-                    >
-                      <option value="">Select team</option>
-                      <option value="A">Team A</option>
-                      <option value="B">Team B</option>
-                    </select>
-                  </td>
-                  <td style={styles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={styles.input}
-                      value={stats.goals}
-                      onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
-                    />
-                  </td>
-                  <td style={styles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={styles.input}
-                      value={stats.assists}
-                      onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
-                    />
-                  </td>
-                  <td style={styles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={styles.input}
-                      value={stats.minutes_played}
-                      onChange={(e) =>
-                        onStatChange(entry.player_id, "minutes_played", Number(e.target.value))
-                      }
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-function TeamCard({ title, players }: { title: string; players: BalancedTeamsResponse["team_a"] }) {
-  return (
-    <div style={styles.card}>
-      <h3 style={styles.smallHeading}>{title}</h3>
-      {players.length === 0 && <p>None</p>}
-      {players.length > 0 && (
-        <ul style={styles.list}>
-          {players.map((p) => (
-            <li key={p.player_id} style={styles.listItem}>
-              <span>{p.name}</span>
-              <span style={styles.muted}>({p.rating.toFixed(1)}){p.is_goalkeeper ? " GK" : ""}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-const styles: Record<string, CSSProperties> = {
-  container: {
-    maxWidth: "960px",
-    margin: "0 auto",
-    padding: "1.5rem",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-  },
-  heading: {
-    marginBottom: "1rem",
-  },
-  subheading: {
-    marginBottom: "0.75rem",
-  },
-  smallHeading: {
-    marginBottom: "0.5rem",
-  },
-  card: {
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    padding: "0.75rem 1rem",
-    background: "#fff",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-    marginBottom: "0.75rem",
-  },
-  section: {
-    marginTop: "1.25rem",
-  },
-  form: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "0.75rem",
-    alignItems: "end",
-    marginBottom: "1rem",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.35rem",
-  },
-  label: {
-    fontSize: "0.95rem",
-    color: "#374151",
-  },
-  select: {
-    padding: "0.5rem",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-  },
-  input: {
-    width: "100%",
-    padding: "0.45rem 0.5rem",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-  },
-  textarea: {
-    width: "100%",
-    padding: "0.45rem 0.5rem",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    resize: "vertical",
-  },
-  checkboxRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.35rem",
-  },
-  checkboxLabel: {
-    fontSize: "0.95rem",
-  },
-  button: {
-    padding: "0.55rem 0.9rem",
-    backgroundColor: "#2563eb",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    justifySelf: "start",
-  },
-  error: {
-    color: "#b91c1c",
-    marginBottom: "0.75rem",
-  },
-  success: {
-    color: "#065f46",
-    marginBottom: "0.75rem",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-  th: {
-    textAlign: "left",
-    borderBottom: "1px solid #e5e7eb",
-    padding: "0.5rem 0.25rem",
-  },
-  td: {
-    padding: "0.5rem 0.25rem",
-    borderBottom: "1px solid #f3f4f6",
-  },
-  linkButton: {
-    background: "none",
-    border: "none",
-    color: "#2563eb",
-    cursor: "pointer",
-    padding: 0,
-    textDecoration: "none",
-  },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginBottom: "0.5rem",
-  },
-  teamsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "0.75rem",
-  },
-  scoreRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "0.75rem",
-    marginBottom: "0.75rem",
-    alignItems: "end",
-  },
-  list: {
-    listStyle: "none",
-    padding: 0,
-    margin: 0,
-  },
-  listItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "0.35rem 0",
-    borderBottom: "1px solid #f3f4f6",
-  },
-  muted: {
-    color: "#6b7280",
-    fontSize: "0.9rem",
-  },
-};
