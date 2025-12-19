@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { MatchTeam, PlayerStatInput } from "../api/matches";
+import type { MatchTeam } from "../api/matches";
 import type { Player } from "../api/players";
 import type { SessionPlayer } from "../api/sessions";
 import { BenchStatsTable } from "./BenchStatsTable";
@@ -114,4 +114,3 @@ export const MatchResultSection = memo(function MatchResultSection({
     </section>
   );
 });
-
