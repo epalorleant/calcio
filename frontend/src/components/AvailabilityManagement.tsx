@@ -15,6 +15,8 @@ interface AvailabilityManagementProps {
   onFormChange: (form: { player_ids: number[]; availability: Availability; is_goalkeeper: boolean }) => void;
   onSubmit: (e: FormEvent) => Promise<void>;
   error: string | null;
+  sessionId: number;
+  onAvailabilityUpdate: () => Promise<void>;
 }
 
 export const AvailabilityManagement = memo(function AvailabilityManagement({
@@ -24,17 +26,45 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   onFormChange,
   onSubmit,
   error,
+  sessionId,
+  onAvailabilityUpdate,
 }: AvailabilityManagementProps) {
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
 
+  // Include all players, but mark assigned ones differently
   const playerOptions = useMemo(
-    () => players.filter((p) => !assignedPlayerIds.has(p.id)).map((p) => ({ value: p.id, label: p.name })),
+    () =>
+      players.map((p) => ({
+        value: p.id,
+        label: assignedPlayerIds.has(p.id) ? `${p.name} (already assigned)` : p.name,
+        isAssigned: assignedPlayerIds.has(p.id),
+      })),
     [players, assignedPlayerIds],
   );
+
+  const handleEdit = (entry: SessionPlayer) => {
+    onFormChange({
+      player_ids: [entry.player_id],
+      availability: entry.availability,
+      is_goalkeeper: entry.is_goalkeeper,
+    });
+    // Scroll to form
+    document.querySelector('form')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  const isEditing = form.player_ids.length === 1 && assignedPlayerIds.has(form.player_ids[0]);
+  const editingPlayerName = isEditing
+    ? players.find((p) => p.id === form.player_ids[0])?.name || "Unknown"
+    : null;
 
   return (
     <section style={commonStyles.section}>
       <h2 style={commonStyles.subheading}>Manage Availability</h2>
+      {isEditing && editingPlayerName && (
+        <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
+          Editing availability for: <strong>{editingPlayerName}</strong>
+        </p>
+      )}
       {error && <p style={commonStyles.error}>{error}</p>}
       <form onSubmit={onSubmit} style={commonStyles.form}>
         <label style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
@@ -60,7 +90,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
               </option>
             ) : (
               playerOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
+                <option key={opt.value} value={opt.value} style={opt.isAssigned ? { fontStyle: "italic" } : undefined}>
                   {opt.label}
                 </option>
               ))
@@ -96,7 +126,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
         </label>
 
         <button style={commonStyles.button} type="submit">
-          Save Availability
+          {isEditing ? "Update Availability" : "Save Availability"}
         </button>
       </form>
 
@@ -111,6 +141,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
                 <th style={commonStyles.th}>Availability</th>
                 <th style={commonStyles.th}>Team</th>
                 <th style={commonStyles.th}>GK</th>
+                <th style={commonStyles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +153,20 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
                     <td style={commonStyles.td}>{entry.availability}</td>
                     <td style={commonStyles.td}>{entry.team ?? "—"}</td>
                     <td style={commonStyles.td}>{entry.is_goalkeeper ? "Yes" : "No"}</td>
+                    <td style={commonStyles.td}>
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(entry)}
+                        style={{
+                          ...commonStyles.button,
+                          backgroundColor: "#6b7280",
+                          padding: "0.35rem 0.6rem",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
