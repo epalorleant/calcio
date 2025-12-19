@@ -3,7 +3,9 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from .. import models, schemas
 from ..db import get_db
@@ -14,7 +16,7 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 @router.post("/", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED)
 @router.post("", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED, include_in_schema=False)
-def create_session(session_in: schemas.SessionCreate, db: Session = Depends(get_db)) -> schemas.SessionRead:
+async def create_session(session_in: schemas.SessionCreate, db: AsyncSession = Depends(get_db)) -> schemas.SessionRead:
     session = models.Session(
         date=session_in.date,
         location=session_in.location,
@@ -22,44 +24,45 @@ def create_session(session_in: schemas.SessionCreate, db: Session = Depends(get_
         status=session_in.status,
     )
     db.add(session)
-    db.commit()
-    db.refresh(session)
+    await db.commit()
+    await db.refresh(session)
     return session
 
 
 @router.get("/", response_model=list[schemas.SessionRead])
 @router.get("", response_model=list[schemas.SessionRead], include_in_schema=False)
-def list_sessions(
+async def list_sessions(
     status_filter: Optional[models.SessionStatus] = Query(default=None, alias="status"),
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> list[schemas.SessionRead]:
-    query = db.query(models.Session)
+    stmt = select(models.Session)
 
     if status_filter:
-        query = query.filter(models.Session.status == status_filter)
+        stmt = stmt.where(models.Session.status == status_filter)
     if date_from:
-        query = query.filter(models.Session.date >= date_from)
+        stmt = stmt.where(models.Session.date >= date_from)
     if date_to:
-        query = query.filter(models.Session.date <= date_to)
+        stmt = stmt.where(models.Session.date <= date_to)
 
-    return query.all()
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
 
 @router.get("/{session_id}", response_model=schemas.SessionRead)
-def get_session(session_id: int, db: Session = Depends(get_db)) -> schemas.SessionRead:
-    session = db.get(models.Session, session_id)
+async def get_session(session_id: int, db: AsyncSession = Depends(get_db)) -> schemas.SessionRead:
+    session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
 
 
 @router.patch("/{session_id}", response_model=schemas.SessionRead)
-def update_session(
-    session_id: int, session_in: schemas.SessionUpdate, db: Session = Depends(get_db)
+async def update_session(
+    session_id: int, session_in: schemas.SessionUpdate, db: AsyncSession = Depends(get_db)
 ) -> schemas.SessionRead:
-    session = db.get(models.Session, session_id)
+    session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
@@ -67,18 +70,18 @@ def update_session(
     for field, value in updates.items():
         setattr(session, field, value)
 
-    db.commit()
-    db.refresh(session)
+    await db.commit()
+    await db.refresh(session)
     return session
 
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_session(session_id: int, db: Session = Depends(get_db)) -> None:
-    session = db.get(models.Session, session_id)
+async def delete_session(session_id: int, db: AsyncSession = Depends(get_db)) -> None:
+    session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     db.delete(session)
-    db.commit()
+    await db.commit()
 
 
 class AvailabilityUpdate(BaseModel):
@@ -92,41 +95,38 @@ class AvailabilityBatch(BaseModel):
 
 
 @router.get("/{session_id}/availability", response_model=list[schemas.SessionPlayerRead])
-def list_availability(session_id: int, db: Session = Depends(get_db)) -> list[schemas.SessionPlayerRead]:
-    session = db.get(models.Session, session_id)
+async def list_availability(session_id: int, db: AsyncSession = Depends(get_db)) -> list[schemas.SessionPlayerRead]:
+    session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    session_players = (
-        db.query(models.SessionPlayer)
-        .filter(models.SessionPlayer.session_id == session_id)
-        .all()
+    result = await db.execute(
+        select(models.SessionPlayer).where(models.SessionPlayer.session_id == session_id)
     )
-    return session_players
+    return result.scalars().all()
 
 
 @router.post("/{session_id}/availability", response_model=schemas.SessionPlayerRead)
-def set_availability(
+async def set_availability(
     session_id: int,
     payload: AvailabilityUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> schemas.SessionPlayerRead:
-    session = db.get(models.Session, session_id)
+    session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    player = db.get(models.Player, payload.player_id)
+    player = await db.get(models.Player, payload.player_id)
     if not player:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
 
-    session_player = (
-        db.query(models.SessionPlayer)
-        .filter(
+    result = await db.execute(
+        select(models.SessionPlayer).where(
             models.SessionPlayer.session_id == session_id,
             models.SessionPlayer.player_id == payload.player_id,
         )
-        .first()
     )
+    session_player = result.scalars().first()
 
     if session_player:
         session_player.availability = payload.availability
@@ -140,30 +140,30 @@ def set_availability(
         )
         db.add(session_player)
 
-    db.commit()
-    db.refresh(session_player)
+    await db.commit()
+    await db.refresh(session_player)
     return session_player
 
 
 @router.post("/{session_id}/availability/batch", response_model=list[schemas.SessionPlayerRead])
-def set_availability_batch(
+async def set_availability_batch(
     session_id: int,
     payload: AvailabilityBatch,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> list[schemas.SessionPlayerRead]:
-    session = db.get(models.Session, session_id)
+    session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    existing = {
-        sp.player_id: sp
-        for sp in db.query(models.SessionPlayer).filter(models.SessionPlayer.session_id == session_id).all()
-    }
+    existing_result = await db.execute(
+        select(models.SessionPlayer).where(models.SessionPlayer.session_id == session_id)
+    )
+    existing = {sp.player_id: sp for sp in existing_result.scalars().all()}
 
     updated_records: list[models.SessionPlayer] = []
 
     for entry in payload.entries:
-        player = db.get(models.Player, entry.player_id)
+        player = await db.get(models.Player, entry.player_id)
         if not player:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Player {entry.player_id} not found")
 
@@ -183,9 +183,9 @@ def set_availability_batch(
 
         updated_records.append(session_player)
 
-    db.commit()
+    await db.commit()
     for record in updated_records:
-        db.refresh(record)
+        await db.refresh(record)
     return updated_records
 
 
@@ -204,20 +204,25 @@ class BalancedTeamsResponse(BaseModel):
 
 
 @router.post("/{session_id}/balanced-teams", response_model=BalancedTeamsResponse)
-def generate_balanced_session_teams(session_id: int, db: Session = Depends(get_db)) -> BalancedTeamsResponse:
-    session = db.get(models.Session, session_id)
+async def generate_balanced_session_teams(session_id: int, db: AsyncSession = Depends(get_db)) -> BalancedTeamsResponse:
+    session = await db.get(
+        models.Session,
+        session_id,
+    )
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    session_players = (
-        db.query(models.SessionPlayer)
-        .join(models.Player)
-        .filter(
+    result = await db.execute(
+        select(models.SessionPlayer)
+        .options(
+            selectinload(models.SessionPlayer.player).selectinload(models.Player.rating),
+        )
+        .where(
             models.SessionPlayer.session_id == session_id,
             models.SessionPlayer.availability == models.Availability.YES,
         )
-        .all()
     )
+    session_players = result.scalars().all()
 
     players = [sp.player for sp in session_players]
     ratings = {sp.player_id: (sp.player.rating.overall_rating if sp.player.rating else 1000.0) for sp in session_players}
@@ -232,7 +237,7 @@ def generate_balanced_session_teams(session_id: int, db: Session = Depends(get_d
     for pid in bench_ids:
         id_to_sp[pid].team = models.SessionTeam.BENCH
 
-    db.commit()
+    await db.commit()
 
     def to_payload(ids: list[int]) -> list[BalancedPlayer]:
         return [

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from .. import models, schemas
 from ..db import get_db
@@ -21,12 +23,23 @@ class MatchCompletionPayload(BaseModel):
 
 
 @router.post("/matches", response_model=schemas.SessionMatchRead, status_code=status.HTTP_201_CREATED)
-def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(get_db)) -> schemas.SessionMatchRead:
-    session = db.get(models.Session, payload.session_id)
+async def create_match(payload: schemas.MatchWithStatsCreate, db: AsyncSession = Depends(get_db)) -> schemas.SessionMatchRead:
+    session = await db.get(
+        models.Session,
+        payload.session_id,
+        options=[
+            selectinload(models.Session.session_players).selectinload(models.SessionPlayer.player).selectinload(
+                models.Player.rating
+            )
+        ],
+    )
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    existing_match = db.query(models.Match).filter(models.Match.session_id == payload.session_id).first()
+    existing_match_result = await db.execute(
+        select(models.Match).where(models.Match.session_id == payload.session_id)
+    )
+    existing_match = existing_match_result.scalars().first()
     if existing_match:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -42,10 +55,10 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
         notes=payload.notes,
     )
     db.add(match)
-    db.flush()
+    await db.flush()
 
     for stat_input in payload.player_stats:
-        player = db.get(models.Player, stat_input.player_id)
+        player = await db.get(models.Player, stat_input.player_id)
         if not player:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -70,20 +83,27 @@ def create_match(payload: schemas.MatchWithStatsCreate, db: Session = Depends(ge
             )
         )
 
-    db.flush()
-    ratings.update_ratings_after_match(db, match)
-    db.commit()
-    db.refresh(match)
+    await db.flush()
+    await ratings.update_ratings_after_match(db, match)
+    await db.commit()
+    await db.refresh(match)
     return _compose_session_match_response(match, session_players=session.session_players)
 
 
 @router.put("/matches/{match_id}", response_model=schemas.SessionMatchRead)
-def update_match(
+async def update_match(
     match_id: int,
     payload: schemas.MatchWithStatsCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> schemas.SessionMatchRead:
-    match = db.get(models.Match, match_id)
+    match = await db.get(
+        models.Match,
+        match_id,
+        options=[
+            selectinload(models.Match.session).selectinload(models.Session.session_players),
+            selectinload(models.Match.stats),
+        ],
+    )
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
 
@@ -120,24 +140,40 @@ def update_match(
             )
         )
 
-    db.flush()
-    ratings.update_ratings_after_match(db, match)
-    db.commit()
-    db.refresh(match)
+    await db.flush()
+    await ratings.update_ratings_after_match(db, match)
+    await db.commit()
+    await db.refresh(match)
     return _compose_session_match_response(match, session_players=session.session_players)
 
 
 @router.get("/matches/{match_id}", response_model=schemas.SessionMatchRead)
-def get_match(match_id: int, db: Session = Depends(get_db)) -> schemas.SessionMatchRead:
-    match = db.query(models.Match).filter(models.Match.id == match_id).first()
+async def get_match(match_id: int, db: AsyncSession = Depends(get_db)) -> schemas.SessionMatchRead:
+    result = await db.execute(
+        select(models.Match)
+        .options(
+            selectinload(models.Match.session).selectinload(models.Session.session_players),
+            selectinload(models.Match.stats),
+        )
+        .where(models.Match.id == match_id)
+    )
+    match = result.scalars().first()
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
     return _compose_session_match_response(match)
 
 
 @router.get("/sessions/{session_id}/match", response_model=schemas.SessionMatchRead)
-def get_match_for_session(session_id: int, db: Session = Depends(get_db)) -> schemas.SessionMatchRead:
-    match = db.query(models.Match).filter(models.Match.session_id == session_id).first()
+async def get_match_for_session(session_id: int, db: AsyncSession = Depends(get_db)) -> schemas.SessionMatchRead:
+    result = await db.execute(
+        select(models.Match)
+        .options(
+            selectinload(models.Match.session).selectinload(models.Session.session_players),
+            selectinload(models.Match.stats),
+        )
+        .where(models.Match.session_id == session_id)
+    )
+    match = result.scalars().first()
     if not match:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -147,8 +183,15 @@ def get_match_for_session(session_id: int, db: Session = Depends(get_db)) -> sch
 
 
 @router.post("/matches/{match_id}/complete", response_model=schemas.SessionMatchRead)
-def complete_match(match_id: int, payload: MatchCompletionPayload, db: Session = Depends(get_db)) -> schemas.SessionMatchRead:
-    match = db.get(models.Match, match_id)
+async def complete_match(match_id: int, payload: MatchCompletionPayload, db: AsyncSession = Depends(get_db)) -> schemas.SessionMatchRead:
+    match = await db.get(
+        models.Match,
+        match_id,
+        options=[
+            selectinload(models.Match.session).selectinload(models.Session.session_players),
+            selectinload(models.Match.stats),
+        ],
+    )
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
 
@@ -159,7 +202,7 @@ def complete_match(match_id: int, payload: MatchCompletionPayload, db: Session =
     existing_stats = {stat.player_id: stat for stat in match.stats}
 
     for stat_input in payload.player_stats:
-        player = db.get(models.Player, stat_input.player_id)
+        player = await db.get(models.Player, stat_input.player_id)
         if not player:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -184,10 +227,10 @@ def complete_match(match_id: int, payload: MatchCompletionPayload, db: Session =
                 )
             )
 
-    db.flush()
-    ratings.update_ratings_after_match(db, match)
-    db.commit()
-    db.refresh(match)
+    await db.flush()
+    await ratings.update_ratings_after_match(db, match)
+    await db.commit()
+    await db.refresh(match)
     return _compose_session_match_response(match)
 
 

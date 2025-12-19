@@ -2,5 +2,7 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
+asyncpg
+aiosqlite
 pydantic
 python-dotenv

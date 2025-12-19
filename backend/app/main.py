@@ -2,6 +2,7 @@ import logging
 import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .db import engine
 from .models import Base
@@ -42,6 +43,8 @@ async def healthcheck() -> dict[str, str]:
 
 
 @app.on_event("startup")
-def init_db() -> None:
+async def init_db() -> None:
     # Create tables if they do not exist. For production schema changes, use migrations.
-    Base.metadata.create_all(bind=engine)
+    if isinstance(engine, AsyncEngine):
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)

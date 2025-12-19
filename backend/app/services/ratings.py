@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models
 
@@ -10,23 +10,30 @@ GOAL_BONUS = 2.5
 BASE_RATING = 1000.0
 
 
-def get_or_create_player_rating(db: Session, player_id: int) -> models.PlayerRating:
-    rating = db.get(models.PlayerRating, player_id)
+async def get_or_create_player_rating(db: AsyncSession, player_id: int) -> models.PlayerRating:
+    rating = await db.get(models.PlayerRating, player_id)
     if rating is None:
         rating = models.PlayerRating(player_id=player_id, overall_rating=BASE_RATING)
         db.add(rating)
         # Flush so the object is persisted within the current transaction.
-        db.flush()
+        await db.flush()
     return rating
 
 
-def update_ratings_after_match(db: Session, match: models.Match) -> None:
+async def update_ratings_after_match(db: AsyncSession, match: models.Match) -> None:
     stats = list(match.stats)
     team_a_stats = [stat for stat in stats if stat.team == models.MatchTeam.A]
     team_b_stats = [stat for stat in stats if stat.team == models.MatchTeam.B]
 
-    team_a_rating_sum = sum(get_or_create_player_rating(db, stat.player_id).overall_rating for stat in team_a_stats)
-    team_b_rating_sum = sum(get_or_create_player_rating(db, stat.player_id).overall_rating for stat in team_b_stats)
+    team_a_rating_sum = 0.0
+    for stat in team_a_stats:
+        rating = await get_or_create_player_rating(db, stat.player_id)
+        team_a_rating_sum += rating.overall_rating
+
+    team_b_rating_sum = 0.0
+    for stat in team_b_stats:
+        rating = await get_or_create_player_rating(db, stat.player_id)
+        team_b_rating_sum += rating.overall_rating
 
     expected_a = 1 / (1 + 10 ** ((team_b_rating_sum - team_a_rating_sum) / 400))
     expected_b = 1 - expected_a
@@ -39,7 +46,7 @@ def update_ratings_after_match(db: Session, match: models.Match) -> None:
         actual_a = actual_b = 0.5
 
     for stat in stats:
-        player_rating = get_or_create_player_rating(db, stat.player_id)
+        player_rating = await get_or_create_player_rating(db, stat.player_id)
 
         if stat.team == models.MatchTeam.A:
             delta = K_FACTOR * (actual_a - expected_a)
@@ -53,4 +60,4 @@ def update_ratings_after_match(db: Session, match: models.Match) -> None:
         player_rating.overall_rating += delta
 
     # Flush so callers can commit along with their own updates.
-    db.flush()
+    await db.flush()
