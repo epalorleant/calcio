@@ -25,9 +25,17 @@ def upgrade() -> None:
     
     # Create RecurrenceType enum (PostgreSQL only)
     if is_postgres:
-        recurrence_type_enum = postgresql.ENUM('NONE', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', name='recurrencetype')
-        recurrence_type_enum.create(bind, checkfirst=True)
-        recurrence_type_col = sa.Column('recurrence_type', recurrence_type_enum, nullable=True)
+        # Create the enum type if it doesn't exist (using DO block to handle duplicates)
+        op.execute("""
+            DO $$ BEGIN
+                CREATE TYPE recurrencetype AS ENUM ('NONE', 'WEEKLY', 'BIWEEKLY', 'MONTHLY');
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        """)
+        
+        # Create table with String type first to avoid SQLAlchemy trying to create enum
+        recurrence_type_col = sa.Column('recurrence_type', sa.String(20), nullable=True)
     else:
         # SQLite uses String for enum
         recurrence_type_col = sa.Column('recurrence_type', sa.String(20), nullable=True)
@@ -51,6 +59,10 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
         sa.PrimaryKeyConstraint('id')
     )
+    
+    # For PostgreSQL, alter the column to use the enum type
+    if is_postgres:
+        op.execute("ALTER TABLE session_templates ALTER COLUMN recurrence_type TYPE recurrencetype USING recurrence_type::recurrencetype")
     
     # Add template_id to sessions table
     op.add_column('sessions', sa.Column('template_id', sa.Integer(), nullable=True))
