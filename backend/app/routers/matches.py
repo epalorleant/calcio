@@ -72,16 +72,15 @@ async def create_match(payload: schemas.MatchWithStatsCreate, db: AsyncSession =
                 detail=f"Player {stat_input.player_id} is not part of the session roster",
             )
 
-        match.stats.append(
-            models.PlayerStats(
-                match_id=match.id,
-                player_id=stat_input.player_id,
-                team=stat_input.team,
-                goals=stat_input.goals,
-                assists=stat_input.assists,
-                minutes_played=stat_input.minutes_played,
-            )
+        stat = models.PlayerStats(
+            match_id=match.id,
+            player_id=stat_input.player_id,
+            team=stat_input.team,
+            goals=stat_input.goals,
+            assists=stat_input.assists,
+            minutes_played=stat_input.minutes_played,
         )
+        db.add(stat)
 
     await db.flush()
     await ratings.update_ratings_after_match(db, match)
@@ -120,9 +119,12 @@ async def update_match(
     match.score_team_b = payload.score_team_b
     match.notes = payload.notes
 
-    # Clear existing stats - SQLAlchemy will track deletions properly
-    match.stats.clear()
+    # Delete existing stats explicitly to avoid lazy loading issues
+    await db.execute(
+        delete(models.PlayerStats).where(models.PlayerStats.match_id == match.id)
+    )
 
+    # Add new stats directly to session
     for stat_input in payload.player_stats:
         if stat_input.player_id not in session_roster:
             raise HTTPException(
@@ -130,16 +132,15 @@ async def update_match(
                 detail=f"Player {stat_input.player_id} is not part of the session roster",
             )
 
-        match.stats.append(
-            models.PlayerStats(
-                match_id=match.id,
-                player_id=stat_input.player_id,
-                team=stat_input.team,
-                goals=stat_input.goals,
-                assists=stat_input.assists,
-                minutes_played=stat_input.minutes_played,
-            )
+        stat = models.PlayerStats(
+            match_id=match.id,
+            player_id=stat_input.player_id,
+            team=stat_input.team,
+            goals=stat_input.goals,
+            assists=stat_input.assists,
+            minutes_played=stat_input.minutes_played,
         )
+        db.add(stat)
 
     await db.flush()
     await ratings.update_ratings_after_match(db, match)
@@ -200,7 +201,11 @@ async def complete_match(match_id: int, payload: MatchCompletionPayload, db: Asy
     match.score_team_b = payload.score_team_b
     match.notes = payload.notes
 
-    existing_stats = {stat.player_id: stat for stat in match.stats}
+    # Load existing stats explicitly to avoid lazy loading
+    existing_result = await db.execute(
+        select(models.PlayerStats).where(models.PlayerStats.match_id == match.id)
+    )
+    existing_stats = {stat.player_id: stat for stat in existing_result.scalars().all()}
 
     for stat_input in payload.player_stats:
         player = await db.get(models.Player, stat_input.player_id)
@@ -217,16 +222,15 @@ async def complete_match(match_id: int, payload: MatchCompletionPayload, db: Asy
             stat.assists = stat_input.assists
             stat.minutes_played = stat_input.minutes_played
         else:
-            match.stats.append(
-                models.PlayerStats(
-                    match_id=match.id,
-                    player_id=stat_input.player_id,
-                    team=stat_input.team,
-                    goals=stat_input.goals,
-                    assists=stat_input.assists,
-                    minutes_played=stat_input.minutes_played,
-                )
+            new_stat = models.PlayerStats(
+                match_id=match.id,
+                player_id=stat_input.player_id,
+                team=stat_input.team,
+                goals=stat_input.goals,
+                assists=stat_input.assists,
+                minutes_played=stat_input.minutes_played,
             )
+            db.add(new_stat)
 
     await db.flush()
     await ratings.update_ratings_after_match(db, match)

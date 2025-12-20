@@ -385,6 +385,8 @@ export default function SessionDetailPage() {
         onFormChange={setForm}
         onSubmit={handleSubmit}
         error={error}
+        sessionId={sessionId}
+        onAvailabilityUpdate={loadData}
       />
 
       <BalancedTeamsSection
