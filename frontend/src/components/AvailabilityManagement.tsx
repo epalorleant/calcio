@@ -15,8 +15,6 @@ interface AvailabilityManagementProps {
   onFormChange: (form: { player_ids: number[]; availability: Availability; is_goalkeeper: boolean }) => void;
   onSubmit: (e: FormEvent) => Promise<void>;
   error: string | null;
-  sessionId: number;
-  onAvailabilityUpdate: () => Promise<void>;
 }
 
 export const AvailabilityManagement = memo(function AvailabilityManagement({
@@ -26,8 +24,6 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   onFormChange,
   onSubmit,
   error,
-  sessionId,
-  onAvailabilityUpdate,
 }: AvailabilityManagementProps) {
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
 
