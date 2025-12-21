@@ -97,7 +97,19 @@ export function AppContent() {
             </>
           ) : (
             <button
-              onClick={() => navigate("/login")}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Try React Router navigation first
+                navigate("/login", { replace: true });
+                // Fallback: force navigation if React Router doesn't work
+                setTimeout(() => {
+                  if (window.location.pathname !== "/login") {
+                    window.location.replace("/login");
+                  }
+                }, 50);
+              }}
               style={{
                 padding: "0.4rem 0.8rem",
                 backgroundColor: "transparent",
