@@ -84,7 +84,8 @@ export default function SessionsPage() {
     <div style={styles.container}>
       <h1 style={styles.heading}>{t.sessionsPage}</h1>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
+      {isAuthenticated && (
+        <form onSubmit={handleSubmit} style={styles.form}>
         <label style={styles.field}>
           <span style={styles.label}>{t.dateTime}</span>
           <input
