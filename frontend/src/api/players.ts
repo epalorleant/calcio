@@ -29,6 +29,40 @@ export async function getPlayer(id: number): Promise<Player> {
   return data;
 }
 
+export interface PlayerStatsSummary {
+  total_matches: number;
+  total_goals: number;
+  total_assists: number;
+  total_minutes_played: number;
+  average_goals_per_match: number;
+  average_assists_per_match: number;
+}
+
+export interface PlayerMatchHistoryItem {
+  match_id: number;
+  session_id: number;
+  session_date: string;
+  session_location: string;
+  team: "A" | "B";
+  goals: number;
+  assists: number;
+  minutes_played: number;
+  score_team_a: number;
+  score_team_b: number;
+  rating_after_match: number | null;
+}
+
+export interface PlayerProfile {
+  player: Player;
+  stats_summary: PlayerStatsSummary;
+  match_history: PlayerMatchHistoryItem[];
+}
+
+export async function getPlayerProfile(id: number): Promise<PlayerProfile> {
+  const { data } = await client.get<PlayerProfile>(`/players/${id}/profile`);
+  return data;
+}
+
 export async function createPlayer(payload: PlayerCreate): Promise<Player> {
   const { data } = await client.post<Player>("/players", payload);
   return data;

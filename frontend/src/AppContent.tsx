@@ -1,4 +1,4 @@
-import { Link, Routes, Route } from "react-router-dom";
+import { Link, Routes, Route, useNavigate } from "react-router-dom";
 import PlayersPage from "./pages/PlayersPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionsPage from "./pages/SessionsPage";
@@ -15,6 +15,7 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 export function AppContent() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isAuthenticated, logout, user } = useAuth();
   const isAdmin = user?.is_admin || user?.is_root;
   
@@ -95,20 +96,20 @@ export function AppContent() {
               </button>
             </>
           ) : (
-            <Link
-              to="/login"
+            <button
+              onClick={() => navigate("/login")}
               style={{
                 padding: "0.4rem 0.8rem",
                 backgroundColor: "transparent",
                 color: "#cbd5e1",
                 border: "1px solid #475569",
                 borderRadius: "4px",
-                textDecoration: "none",
+                cursor: "pointer",
                 fontSize: "0.9rem",
               }}
             >
               {t.login}
-            </Link>
+            </button>
           )}
           <LanguageSwitcher />
         </div>

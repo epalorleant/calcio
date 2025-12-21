@@ -33,6 +33,38 @@ class PlayerRead(OrmBase):
     rating: Optional["PlayerRatingRead"] = None
 
 
+class PlayerStatsSummary(BaseModel):
+    """Aggregated statistics for a player."""
+    total_matches: int
+    total_goals: int
+    total_assists: int
+    total_minutes_played: int
+    average_goals_per_match: float
+    average_assists_per_match: float
+
+
+class PlayerMatchHistoryItem(BaseModel):
+    """A single match in player's history."""
+    match_id: int
+    session_id: int
+    session_date: datetime
+    session_location: str
+    team: MatchTeam
+    goals: int
+    assists: int
+    minutes_played: int
+    score_team_a: int
+    score_team_b: int
+    rating_after_match: Optional[int] = None
+
+
+class PlayerProfileResponse(BaseModel):
+    """Complete player profile with statistics."""
+    player: PlayerRead
+    stats_summary: PlayerStatsSummary
+    match_history: list[PlayerMatchHistoryItem]
+
+
 class SessionCreate(BaseModel):
     date: datetime = Field(..., description="Session date and time")
     location: str = Field(..., min_length=1, max_length=255, description="Session location")

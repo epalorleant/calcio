@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import { createPlayer, deletePlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../auth/AuthContext";
 
 export default function PlayersPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const isAdmin = user?.is_admin || user?.is_root;
   const [players, setPlayers] = useState<Player[]>([]);
@@ -146,29 +148,46 @@ export default function PlayersPage() {
             </tr>
           </thead>
           <tbody>
-            {players.map((player) => (
-              <tr key={player.id}>
-                <td style={styles.td}>{player.name}</td>
-                <td style={styles.td}>{player.preferred_position || "—"}</td>
-                <td style={styles.td}>
-                  {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
-                </td>
-                <td style={styles.td}>{player.active ? t.yes : t.no}</td>
-                {isAdmin && (
+            {players.map((player) => {
+              // Regular users can only view their own profile
+              const canViewProfile = isAdmin || (isAuthenticated && user?.player_id === player.id);
+              
+              return (
+                <tr key={player.id}>
                   <td style={styles.td}>
-                    <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
-                      {player.active ? t.deactivate : t.activate}
-                    </button>
-                    <button
-                      style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
-                      onClick={() => void handleDelete(player)}
-                    >
-                      {t.delete}
-                    </button>
+                    {canViewProfile ? (
+                      <button
+                        style={styles.linkButton}
+                        onClick={() => navigate(`/players/${player.id}`)}
+                        title={t.viewProfile || "View profile"}
+                      >
+                        {player.name}
+                      </button>
+                    ) : (
+                      player.name
+                    )}
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td style={styles.td}>{player.preferred_position || "—"}</td>
+                  <td style={styles.td}>
+                    {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
+                  </td>
+                  <td style={styles.td}>{player.active ? t.yes : t.no}</td>
+                  {isAdmin && (
+                    <td style={styles.td}>
+                      <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
+                        {player.active ? t.deactivate : t.activate}
+                      </button>
+                      <button
+                        style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
+                        onClick={() => void handleDelete(player)}
+                      >
+                        {t.delete}
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
