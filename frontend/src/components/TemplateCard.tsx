@@ -2,6 +2,7 @@ import { memo } from "react";
 import type { SessionTemplate } from "../api/templates";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
+import { useDateFormat } from "../hooks/useDateFormat";
 
 interface TemplateCardProps {
   template: SessionTemplate;
@@ -19,6 +20,7 @@ export const TemplateCard = memo(function TemplateCard({
   onGenerateRecurring,
 }: TemplateCardProps) {
   const { t } = useTranslation();
+  const { formatDateOnly } = useDateFormat();
   const dayNames = [t.monday, t.tuesday, t.wednesday, t.thursday, t.friday, t.saturday, t.sunday];
   const dayName = template.day_of_week !== null ? dayNames[template.day_of_week] : t.oneTime;
 
@@ -64,8 +66,7 @@ export const TemplateCard = memo(function TemplateCard({
                 </p>
                 {template.recurrence_start && template.recurrence_end && (
                   <p style={{ margin: "0.25rem 0", ...commonStyles.muted }}>
-                    {new Date(template.recurrence_start).toLocaleDateString()} -{" "}
-                    {new Date(template.recurrence_end).toLocaleDateString()}
+                    {formatDateOnly(template.recurrence_start)} - {formatDateOnly(template.recurrence_end)}
                   </p>
                 )}
               </>

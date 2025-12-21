@@ -162,6 +162,8 @@ export const translations = {
     noBenchPlayers: "No bench players assigned.",
     failedToLoadSessionDetails: "Failed to load session details.",
     none: "None",
+    start: "start",
+    end: "end",
   },
   fr: {
     // Navigation
@@ -326,6 +328,8 @@ export const translations = {
     noBenchPlayers: "Aucun joueur sur le banc assigné.",
     failedToLoadSessionDetails: "Échec du chargement des détails de la session.",
     none: "Aucun",
+    start: "début",
+    end: "fin",
   },
 } as const;
 

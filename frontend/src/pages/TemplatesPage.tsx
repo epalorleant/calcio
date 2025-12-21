@@ -15,9 +15,11 @@ import { TemplateForm } from "../components/TemplateForm";
 import { CreateSessionFromTemplateModal } from "../components/CreateSessionFromTemplateModal";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
+import { useDateFormat } from "../hooks/useDateFormat";
 
 export default function TemplatesPage() {
   const { t } = useTranslation();
+  const { formatDateOnly } = useDateFormat();
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<SessionTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -102,8 +104,8 @@ export default function TemplatesPage() {
     const template = templates.find((t) => t.id === id);
     if (!template) return;
 
-    const startDate = template.recurrence_start ? new Date(template.recurrence_start).toLocaleDateString() : "début";
-    const endDate = template.recurrence_end ? new Date(template.recurrence_end).toLocaleDateString() : "fin";
+    const startDate = template.recurrence_start ? formatDateOnly(template.recurrence_start) : t.start;
+    const endDate = template.recurrence_end ? formatDateOnly(template.recurrence_end) : t.end;
     const confirmed = window.confirm(t.generateRecurringConfirm(template.name, startDate, endDate));
     if (!confirmed) return;
 

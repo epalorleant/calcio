@@ -3,11 +3,13 @@ import type { FormEvent, CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, deleteSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
 import { useTranslation } from "../i18n/useTranslation";
+import { useDateFormat } from "../hooks/useDateFormat";
 
 const defaultDateValue = () => new Date().toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
 
 export default function SessionsPage() {
   const { t } = useTranslation();
+  const { formatDate } = useDateFormat();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
@@ -136,7 +138,7 @@ export default function SessionsPage() {
           <tbody>
             {sessions.map((session) => (
               <tr key={session.id}>
-                <td style={styles.td}>{new Date(session.date).toLocaleString()}</td>
+                <td style={styles.td}>{formatDate(session.date)}</td>
                 <td style={styles.td}>{session.location}</td>
                 <td style={styles.td}>{session.status === "PLANNED" ? t.planned : session.status === "COMPLETED" ? t.completed : t.cancelled}</td>
                 <td style={styles.td}>

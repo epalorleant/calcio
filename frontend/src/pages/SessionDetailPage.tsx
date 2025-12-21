@@ -27,9 +27,11 @@ import { BalancedTeamsSection } from "../components/BalancedTeamsSection";
 import { MatchResultSection } from "../components/MatchResultSection";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
+import { useDateFormat } from "../hooks/useDateFormat";
 
 export default function SessionDetailPage() {
   const { t } = useTranslation();
+  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -369,7 +371,7 @@ export default function SessionDetailPage() {
       {session && (
         <div style={commonStyles.card}>
           <p>
-            <strong>{t.date}:</strong> {new Date(session.date).toLocaleString()}
+            <strong>{t.date}:</strong> {formatDate(session.date)}
           </p>
           <p>
             <strong>{t.location}:</strong> {session.location}
