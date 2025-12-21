@@ -224,7 +224,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
 
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
           <button type="submit" style={commonStyles.button} disabled={loading}>
-            {loading ? "Enregistrement..." : template ? t.updateTemplate : t.createTemplate}
+            {loading ? "Enregistrement..." : template ? t.editTemplate : t.createTemplate}
           </button>
           <button
             type="button"

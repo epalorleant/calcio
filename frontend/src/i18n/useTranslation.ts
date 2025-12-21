@@ -9,10 +9,10 @@ export function useTranslation() {
     const t = translations[language];
     
     // Helper function to get translations with optional parameters
-    const translate = (key: keyof typeof t, ...args: any[]): string => {
+    const translate = (key: keyof typeof t, ...args: unknown[]): string => {
       const value = t[key];
       if (typeof value === "function") {
-        return value(...args);
+        return (value as (...args: unknown[]) => string)(...args);
       }
       return value as string;
     };
