@@ -184,11 +184,16 @@ export default function SessionDetailPage() {
       return null;
     }
 
+    // Calculate balance score: absolute difference between team rating sums
+    const sumA = teamA.reduce((sum, player) => sum + player.rating, 0);
+    const sumB = teamB.reduce((sum, player) => sum + player.rating, 0);
+    const balanceScore = Math.abs(sumA - sumB);
+
     return {
       team_a: teamA,
       team_b: teamB,
       bench,
-      balance_score: 0,
+      balance_score: balanceScore,
     };
   }, [availability, players]);
 
