@@ -8,3 +8,5 @@ pydantic
 pydantic-settings
 python-dotenv
 alembic
+python-jose[cryptography]
+passlib[bcrypt]
