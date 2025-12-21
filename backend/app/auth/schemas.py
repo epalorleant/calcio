@@ -27,6 +27,7 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=100)
     password: str = Field(..., min_length=8)
     player_id: int | None = None  # Optional: link to existing player
+    create_player: bool = False  # Optional: create a new player with username as name
 
 
 class UserRead(BaseModel):
@@ -62,4 +63,10 @@ class PasswordChangeRequest(BaseModel):
 class GrantAdminRequest(BaseModel):
     """Grant admin role request schema."""
     user_id: int
+
+
+class LinkUserToPlayerRequest(BaseModel):
+    """Link user to player request schema."""
+    user_id: int
+    player_id: int | None = None  # None to unlink
 

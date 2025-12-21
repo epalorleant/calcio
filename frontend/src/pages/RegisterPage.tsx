@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [createPlayer, setCreatePlayer] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,7 +34,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register({ email, username, password });
+      await register({ email, username, password, create_player: createPlayer });
       const user = await getCurrentUser();
       setUser(user);
       navigate("/");
@@ -109,6 +110,20 @@ export default function RegisterPage() {
               style={{ ...commonStyles.input, width: "100%" }}
               disabled={isLoading}
             />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <input
+              type="checkbox"
+              id="createPlayer"
+              checked={createPlayer}
+              onChange={(e) => setCreatePlayer(e.target.checked)}
+              disabled={isLoading}
+              style={{ cursor: "pointer" }}
+            />
+            <label htmlFor="createPlayer" style={{ color: "#cbd5e1", cursor: "pointer" }}>
+              {t.createPlayerAccount || "Create a player profile with my username"}
+            </label>
           </div>
 
           {error && (

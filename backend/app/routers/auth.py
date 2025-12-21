@@ -10,9 +10,10 @@ from sqlalchemy.orm import selectinload
 from ..core.config import settings
 from ..db import get_db
 from ..models import Player, User
-from ..auth.dependencies import get_current_active_user, get_current_root_user
+from ..auth.dependencies import get_current_active_user, get_current_admin_user, get_current_root_user
 from ..auth.schemas import (
     GrantAdminRequest,
+    LinkUserToPlayerRequest,
     PasswordChangeRequest,
     RefreshTokenRequest,
     Token,
@@ -52,6 +53,22 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already taken",
         )
+
+    # If create_player is True, create a new player with username as name
+    if user_in.create_player:
+        if user_in.player_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot both create a player and link to an existing player",
+            )
+        # Create new player
+        new_player = Player(
+            name=user_in.username,
+            active=True,
+        )
+        db.add(new_player)
+        await db.flush()
+        user_in.player_id = new_player.id
 
     # If player_id is provided, verify it exists and is not already linked
     player = None
@@ -247,5 +264,66 @@ async def grant_admin_role(
         )
 
     target_user.is_admin = True
+    await db.commit()
+
+
+@router.post("/link-user-to-player", status_code=status.HTTP_204_NO_CONTENT)
+async def link_user_to_player(
+    request: LinkUserToPlayerRequest,
+    admin_user: Annotated[User, Depends(get_current_admin_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    """Link or unlink a user to/from a player. Only admin users can perform this action."""
+    # Load target user with player relationship
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.player))
+        .where(User.id == request.user_id)
+    )
+    target_user = result.scalar_one_or_none()
+    
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if target_user.is_root:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot modify root user",
+        )
+
+    # If unlinking (player_id is None)
+    if request.player_id is None:
+        if target_user.player:
+            target_user.player.user_id = None
+            await db.commit()
+        return
+
+    # If linking to a player
+    player = await db.get(Player, request.player_id)
+    if not player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found",
+        )
+
+    # Check if target user already has a player linked
+    if target_user.player and target_user.player.id != request.player_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User account is already linked to a player profile. Please unlink the current player first.",
+        )
+
+    # Check if player is already linked to another user
+    if player.user_id is not None and player.user_id != target_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Player is already linked to another user account",
+        )
+
+    # Link new player (target_user.player is None or same player, so safe to link)
+    player.user_id = target_user.id
     await db.commit()
 

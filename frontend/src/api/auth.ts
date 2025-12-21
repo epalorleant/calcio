@@ -10,6 +10,7 @@ export interface RegisterRequest {
   username: string;
   password: string;
   player_id?: number;
+  create_player?: boolean;
 }
 
 export interface TokenResponse {
@@ -35,6 +36,11 @@ export interface PasswordChangeRequest {
 
 export interface GrantAdminRequest {
   user_id: number;
+}
+
+export interface LinkUserToPlayerRequest {
+  user_id: number;
+  player_id: number | null;
 }
 
 const TOKEN_STORAGE_KEY = "calcio_access_token";
@@ -109,5 +115,9 @@ export async function getUsers(): Promise<User[]> {
 
 export async function grantAdminRole(request: GrantAdminRequest): Promise<void> {
   await client.post("/auth/grant-admin", request);
+}
+
+export async function linkUserToPlayer(request: LinkUserToPlayerRequest): Promise<void> {
+  await client.post("/auth/link-user-to-player", request);
 }
 
