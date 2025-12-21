@@ -10,3 +10,4 @@ python-dotenv
 alembic
 python-jose[cryptography]
 passlib[bcrypt]
+email-validator
