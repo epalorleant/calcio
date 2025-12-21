@@ -4,7 +4,7 @@ export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
+    <div style={{ display: "flex", gap: "0.25rem", alignItems: "center", flexShrink: 0 }}>
       <button
         onClick={() => setLanguage("en")}
         style={{

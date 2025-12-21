@@ -13,12 +13,14 @@ export function AppContent() {
     <div className="layout">
       <header className="topbar">
         <div className="brand">Calcio</div>
-        <nav className="nav">
-          <Link to="/players" reloadDocument>{t.players}</Link>
-          <Link to="/sessions" reloadDocument>{t.sessions}</Link>
-          <Link to="/templates" reloadDocument>{t.templates}</Link>
-        </nav>
-        <LanguageSwitcher />
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1, justifyContent: "flex-end" }}>
+          <nav className="nav">
+            <Link to="/players" reloadDocument>{t.players}</Link>
+            <Link to="/sessions" reloadDocument>{t.sessions}</Link>
+            <Link to="/templates" reloadDocument>{t.templates}</Link>
+          </nav>
+          <LanguageSwitcher />
+        </div>
       </header>
 
       <main className="content">
