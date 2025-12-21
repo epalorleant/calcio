@@ -101,14 +101,9 @@ export function AppContent() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Try React Router navigation first
-                navigate("/login", { replace: true });
-                // Fallback: force navigation if React Router doesn't work
-                setTimeout(() => {
-                  if (window.location.pathname !== "/login") {
-                    window.location.replace("/login");
-                  }
-                }, 50);
+                // Always use window.location for reliable navigation
+                // This works even when React Router navigation is blocked
+                window.location.href = "/login";
               }}
               style={{
                 padding: "0.4rem 0.8rem",
