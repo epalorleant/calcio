@@ -36,7 +36,7 @@ async def get_current_user(
     result = await db.execute(
         select(User)
         .options(selectinload(User.player))
-        .where(User.id == user_id)
+        .where(User.id == user_id, User.deleted_at.is_(None))
     )
     user = result.scalar_one_or_none()
     if user is None:

@@ -121,3 +121,7 @@ export async function linkUserToPlayer(request: LinkUserToPlayerRequest): Promis
   await client.post("/auth/link-user-to-player", request);
 }
 
+export async function deleteUser(userId: number): Promise<void> {
+  await client.delete(`/auth/users/${userId}`);
+}
+

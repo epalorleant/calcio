@@ -116,8 +116,10 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Token:
     """Login and get access token."""
-    # Find user by email
-    result = await db.execute(select(User).where(User.email == user_in.email))
+    # Find user by email (exclude deleted users)
+    result = await db.execute(
+        select(User).where(User.email == user_in.email, User.deleted_at.is_(None))
+    )
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(user_in.password, user.hashed_password):
@@ -165,7 +167,10 @@ async def refresh_token(
             detail="Invalid refresh token",
         )
 
-    user = await db.get(User, user_id)
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.deleted_at.is_(None))
+    )
+    user = result.scalar_one_or_none()
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -226,6 +231,7 @@ async def list_users(
     result = await db.execute(
         select(User)
         .options(selectinload(User.player))
+        .where(User.deleted_at.is_(None))
         .order_by(User.created_at.desc())
     )
     users = result.scalars().all()
@@ -325,5 +331,44 @@ async def link_user_to_player(
 
     # Link new player (target_user.player is None or same player, so safe to link)
     player.user_id = target_user.id
+    await db.commit()
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: int,
+    root_user: Annotated[User, Depends(get_current_root_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    """Delete a user account. Only root user can perform this action."""
+    target_user = await db.get(User, user_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if target_user.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User already deleted",
+        )
+
+    if target_user.is_root:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete root user",
+        )
+
+    # Soft delete: mark as deleted
+    from datetime import datetime, timezone
+    target_user.deleted_at = datetime.now(timezone.utc)
+    # Also deactivate the account
+    target_user.is_active = False
+    
+    # Unlink player if linked
+    if target_user.player:
+        target_user.player.user_id = None
+    
     await db.commit()
 

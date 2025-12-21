@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUsers, grantAdminRole, linkUserToPlayer, type User } from "../api/auth";
+import { deleteUser, getUsers, grantAdminRole, linkUserToPlayer, type User } from "../api/auth";
 import { getPlayers, type Player } from "../api/players";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "../i18n/useTranslation";
@@ -89,6 +89,30 @@ export default function AdminManagementPage() {
     }
   };
 
+  const handleDeleteUser = async (userId: number, username: string) => {
+    const confirmed = window.confirm(
+      t.deleteUserConfirm?.(username) || `Are you sure you want to delete the account for ${username}? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setError(null);
+      setSuccess(null);
+      await deleteUser(userId);
+      setSuccess(t.userDeleted || "User account deleted successfully");
+      // Reload users
+      const data = await getUsers();
+      setUsers(data);
+    } catch (err: any) {
+      console.error(err);
+      if (err.response?.data?.detail) {
+        setError(String(err.response.data.detail));
+      } else {
+        setError(t.failedToDeleteUser || "Failed to delete user account");
+      }
+    }
+  };
+
   if (!isRoot) {
     return (
       <div style={commonStyles.container}>
@@ -165,6 +189,14 @@ export default function AdminManagementPage() {
                             onClick={() => handleGrantAdmin(u.id, u.username)}
                           >
                             {t.grantAdmin}
+                          </button>
+                        )}
+                        {!u.is_root && (
+                          <button
+                            style={{ ...commonStyles.button, backgroundColor: "#b91c1c", color: "#fff" }}
+                            onClick={() => handleDeleteUser(u.id, u.username)}
+                          >
+                            {t.delete}
                           </button>
                         )}
                         {linkingUserId === u.id ? (
