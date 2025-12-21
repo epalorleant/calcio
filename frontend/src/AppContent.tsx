@@ -8,6 +8,7 @@ import RegisterPage from "./pages/RegisterPage";
 import { useTranslation } from "./i18n/useTranslation";
 import { useAuth } from "./auth/AuthContext";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 export function AppContent() {
   const { t } = useTranslation();
@@ -18,11 +19,11 @@ export function AppContent() {
       <header className="topbar">
         <div className="brand">Calcio</div>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1, justifyContent: "flex-end" }}>
-          <nav className="nav">
-            <Link to="/players" reloadDocument>{t.players}</Link>
-            <Link to="/sessions" reloadDocument>{t.sessions}</Link>
-            <Link to="/templates" reloadDocument>{t.templates}</Link>
-          </nav>
+            <nav className="nav">
+              <Link to="/players" reloadDocument>{t.players}</Link>
+              <Link to="/sessions" reloadDocument>{t.sessions}</Link>
+              {isAuthenticated && <Link to="/templates" reloadDocument>{t.templates}</Link>}
+            </nav>
           {isAuthenticated ? (
             <>
               <div style={{ color: "#cbd5e1", fontSize: "0.9rem" }}>
@@ -71,7 +72,14 @@ export function AppContent() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/sessions/:id" element={<SessionDetailPage />} />
-          <Route path="/templates" element={<TemplatesPage />} />
+          <Route
+            path="/templates"
+            element={
+              <ProtectedRoute>
+                <TemplatesPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
     </div>
