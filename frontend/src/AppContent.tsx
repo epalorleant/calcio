@@ -1,4 +1,4 @@
-import { Link, Routes, Route, useNavigate } from "react-router-dom";
+import { Link, Routes, Route } from "react-router-dom";
 import PlayersPage from "./pages/PlayersPage";
 import SessionDetailPage from "./pages/SessionDetailPage";
 import SessionsPage from "./pages/SessionsPage";
@@ -15,7 +15,6 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 export function AppContent() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { isAuthenticated, logout, user } = useAuth();
   const isAdmin = user?.is_admin || user?.is_root;
   
