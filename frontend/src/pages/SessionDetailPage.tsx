@@ -98,7 +98,7 @@ export default function SessionDetailPage() {
       await loadMatch(sessionId);
     } catch (err) {
       console.error(err);
-      setError("Échec du chargement des détails de la session.");
+      setError(t.failedToLoadSessionDetails);
     } finally {
       setLoading(false);
     }

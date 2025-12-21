@@ -40,7 +40,7 @@ export const TemplateCard = memo(function TemplateCard({
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
             <h3 style={{ ...commonStyles.smallHeading, margin: 0 }}>{template.name}</h3>
             {!template.active && (
-              <span style={{ ...commonStyles.muted, fontSize: "0.85rem", fontStyle: "italic" }}>(Inactif)</span>
+              <span style={{ ...commonStyles.muted, fontSize: "0.85rem", fontStyle: "italic" }}>({t.inactive})</span>
             )}
           </div>
           {template.description && (

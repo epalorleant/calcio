@@ -26,7 +26,7 @@ export default function SessionsPage() {
       const data = await getSessions();
       if (!Array.isArray(data)) {
         console.error("Unexpected sessions payload", data);
-        setError("Réponse inattendue du serveur.");
+        setError(t.unexpectedResponse);
         setSessions([]);
         return;
       }

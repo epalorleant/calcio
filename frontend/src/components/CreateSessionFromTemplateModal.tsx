@@ -50,7 +50,7 @@ export function CreateSessionFromTemplateModal({
       onSuccess(session.id);
       onClose();
     } catch (err) {
-      setError("Échec de la création de la session");
+      setError(t.failedToCreateSessionFromTemplate);
       console.error(err);
     } finally {
       setLoading(false);
@@ -123,7 +123,7 @@ export function CreateSessionFromTemplateModal({
 
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
             <button type="submit" style={commonStyles.button} disabled={loading}>
-              {loading ? "Création..." : t.createSession}
+              {loading ? t.creating : t.createSession}
             </button>
             <button
               type="button"

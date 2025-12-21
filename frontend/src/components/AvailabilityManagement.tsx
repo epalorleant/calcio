@@ -52,7 +52,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
 
   const isEditing = form.player_ids.length === 1 && assignedPlayerIds.has(form.player_ids[0]);
   const editingPlayerName = isEditing
-    ? players.find((p) => p.id === form.player_ids[0])?.name || "Inconnu"
+    ? players.find((p) => p.id === form.player_ids[0])?.name || t.unknown
     : null;
 
   return (

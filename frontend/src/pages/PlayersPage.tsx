@@ -22,7 +22,7 @@ export default function PlayersPage() {
       const data = await getPlayers();
       if (!Array.isArray(data)) {
         console.error("Unexpected players payload", data);
-        setError("Réponse inattendue du serveur.");
+        setError(t.unexpectedResponse);
         setPlayers([]);
         return;
       }
@@ -145,7 +145,7 @@ export default function PlayersPage() {
                 <td style={styles.td}>{player.active ? t.yes : t.no}</td>
                 <td style={styles.td}>
                   <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
-                    {player.active ? "Désactiver" : "Activer"}
+                    {player.active ? t.deactivate : t.activate}
                   </button>
                   <button
                     style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}

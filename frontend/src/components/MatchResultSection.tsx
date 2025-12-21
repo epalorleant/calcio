@@ -111,7 +111,7 @@ export const MatchResultSection = memo(function MatchResultSection({
       />
 
       <button style={{ ...commonStyles.button, marginTop: "0.75rem" }} onClick={() => void onSaveMatch()} disabled={savingMatch}>
-        {savingMatch ? "Enregistrement..." : existingMatch ? "Mettre à jour le résultat" : t.saveMatch}
+        {savingMatch ? t.saving : existingMatch ? t.updateResult : t.saveMatch}
       </button>
     </section>
   );

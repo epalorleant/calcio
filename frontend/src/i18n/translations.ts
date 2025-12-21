@@ -17,6 +17,15 @@ export const translations = {
     success: "Success",
     actions: "Actions",
     back: "Back",
+    unexpectedResponse: "Unexpected response from server.",
+    unknown: "Unknown",
+    inactive: "Inactive",
+    activate: "Activate",
+    deactivate: "Deactivate",
+    saving: "Saving...",
+    creating: "Creating...",
+    updateResult: "Update result",
+    failedToCreateSessionFromTemplate: "Failed to create session",
     
     // Players
     playersPage: "Players",
@@ -152,6 +161,8 @@ export const translations = {
     noTeamAssignments: "No teams generated yet.",
     assignPlayersToRecordStats: "Assign players to this team to record stats.",
     noBenchPlayers: "No bench players assigned.",
+    failedToLoadSessionDetails: "Failed to load session details.",
+    none: "None",
   },
   fr: {
     // Navigation
@@ -171,6 +182,15 @@ export const translations = {
     success: "Succès",
     actions: "Actions",
     back: "Retour",
+    unexpectedResponse: "Réponse inattendue du serveur.",
+    unknown: "Inconnu",
+    inactive: "Inactif",
+    activate: "Activer",
+    deactivate: "Désactiver",
+    saving: "Enregistrement...",
+    creating: "Création...",
+    updateResult: "Mettre à jour le résultat",
+    failedToCreateSessionFromTemplate: "Échec de la création de la session",
     
     // Players
     playersPage: "Joueurs",
@@ -306,6 +326,8 @@ export const translations = {
     noTeamAssignments: "Aucune assignation d'équipe pour le moment.",
     assignPlayersToRecordStats: "Assignez des joueurs à cette équipe pour enregistrer les statistiques.",
     noBenchPlayers: "Aucun joueur sur le banc assigné.",
+    failedToLoadSessionDetails: "Échec du chargement des détails de la session.",
+    none: "Aucun",
   },
 } as const;
 
