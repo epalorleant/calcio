@@ -17,6 +17,7 @@ export const translations = {
     success: "Success",
     actions: "Actions",
     back: "Back",
+    readOnlyMode: "Read-only mode. Please log in to make changes.",
     
     // Authentication
     login: "Login",
