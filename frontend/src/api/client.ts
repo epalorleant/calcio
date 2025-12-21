@@ -36,6 +36,16 @@ client.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // Don't try to refresh if we're already on login/register page
+      const isAuthPage = window.location.pathname === "/login" || window.location.pathname === "/register";
+      
+      // Only try to refresh if we have a refresh token
+      const refreshToken = getStoredRefreshToken();
+      if (!refreshToken || isAuthPage) {
+        clearTokens();
+        return Promise.reject(error);
+      }
+
       try {
         // Try to refresh the token
         await refreshAccessToken();
@@ -46,9 +56,12 @@ client.interceptors.response.use(
         }
         return client(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
+        // Refresh failed, clear tokens
         clearTokens();
-        window.location.href = "/login";
+        // Only redirect if not already on login page
+        if (!isAuthPage) {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       }
     }

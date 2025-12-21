@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { getCurrentUser, clearTokens, type User } from "../api/auth";
+import { getCurrentUser, clearTokens, getStoredToken, type User } from "../api/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -17,8 +17,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to load user on mount if token exists
+    // Try to load user on mount only if token exists
     const loadUser = async () => {
+      const token = getStoredToken();
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
