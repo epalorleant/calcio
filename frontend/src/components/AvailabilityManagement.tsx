@@ -16,6 +16,7 @@ interface AvailabilityManagementProps {
   onFormChange: (form: { player_ids: number[]; availability: Availability; is_goalkeeper: boolean }) => void;
   onSubmit: (e: FormEvent) => Promise<void>;
   error: string | null;
+  isAuthenticated: boolean;
 }
 
 export const AvailabilityManagement = memo(function AvailabilityManagement({
@@ -25,6 +26,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   onFormChange,
   onSubmit,
   error,
+  isAuthenticated,
 }: AvailabilityManagementProps) {
   const { t } = useTranslation();
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
@@ -58,13 +60,19 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   return (
     <section style={commonStyles.section}>
       <h2 style={commonStyles.subheading}>{t.manageAvailability}</h2>
+      {!isAuthenticated && (
+        <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
+          {t.readOnlyMode}
+        </p>
+      )}
       {isEditing && editingPlayerName && (
         <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
           {t.editingAvailabilityFor(editingPlayerName)}
         </p>
       )}
       {error && <p style={commonStyles.error}>{error}</p>}
-      <form onSubmit={onSubmit} style={commonStyles.form}>
+      {isAuthenticated && (
+        <form onSubmit={onSubmit} style={commonStyles.form}>
         <label style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
           <span style={commonStyles.label}>{t.player}</span>
           <select
@@ -127,6 +135,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
           {isEditing ? t.updateAvailability : t.saveAvailability}
         </button>
       </form>
+      )}
 
       <div>
         <h3 style={commonStyles.smallHeading}>{t.currentAvailability}</h3>
@@ -140,7 +149,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
                   <th style={commonStyles.th}>{t.availability}</th>
                   <th style={commonStyles.th}>{t.team}</th>
                   <th style={commonStyles.th}>{t.goalkeeperShort}</th>
-                  <th style={{ ...commonStyles.th, width: "80px", textAlign: "center" }}>{t.actions}</th>
+                  {isAuthenticated && <th style={{ ...commonStyles.th, width: "80px", textAlign: "center" }}>{t.actions}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -152,20 +161,22 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
                       <td style={commonStyles.td}>{entry.availability === "YES" ? t.yes : entry.availability === "NO" ? t.no : t.maybe}</td>
                       <td style={commonStyles.td}>{entry.team ?? "—"}</td>
                       <td style={commonStyles.td}>{entry.is_goalkeeper ? t.yes : t.no}</td>
-                      <td style={{ ...commonStyles.td, textAlign: "center" }}>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(entry)}
-                          style={{
-                            ...commonStyles.button,
-                            backgroundColor: "#6b7280",
-                            padding: "0.35rem 0.6rem",
-                            fontSize: "0.85rem",
-                          }}
-                        >
-                          {t.edit}
-                        </button>
-                      </td>
+                      {isAuthenticated && (
+                        <td style={{ ...commonStyles.td, textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(entry)}
+                            style={{
+                              ...commonStyles.button,
+                              backgroundColor: "#6b7280",
+                              padding: "0.35rem 0.6rem",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {t.edit}
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

@@ -28,10 +28,12 @@ import { MatchResultSection } from "../components/MatchResultSection";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
 import { useDateFormat } from "../hooks/useDateFormat";
+import { useAuth } from "../auth/AuthContext";
 
 export default function SessionDetailPage() {
   const { t } = useTranslation();
   const { formatDate } = useDateFormat();
+  const { isAuthenticated } = useAuth();
   const { id } = useParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -389,6 +391,7 @@ export default function SessionDetailPage() {
         onFormChange={setForm}
         onSubmit={handleSubmit}
         error={error}
+        isAuthenticated={isAuthenticated}
       />
 
       <BalancedTeamsSection
@@ -396,6 +399,7 @@ export default function SessionDetailPage() {
         hasExistingTeams={hasExistingTeams}
         canGenerateTeams={canGenerateTeams}
         onGenerate={handleGenerate}
+        isAuthenticated={isAuthenticated}
       />
 
       <MatchResultSection
@@ -414,6 +418,7 @@ export default function SessionDetailPage() {
         existingMatch={!!existingMatch}
         matchError={matchError}
         matchSuccess={matchSuccess}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

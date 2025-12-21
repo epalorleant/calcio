@@ -10,6 +10,7 @@ interface MatchStatsTableProps {
   playerLookup: Player[];
   playerStats: Record<number, { goals: number; assists: number; minutes_played: number }>;
   onStatChange: (playerId: number, field: "goals" | "assists" | "minutes_played", value: number) => void;
+  isAuthenticated: boolean;
 }
 
 export const MatchStatsTable = memo(function MatchStatsTable({
@@ -18,6 +19,7 @@ export const MatchStatsTable = memo(function MatchStatsTable({
   playerLookup,
   playerStats,
   onStatChange,
+  isAuthenticated,
 }: MatchStatsTableProps) {
   const { t } = useTranslation();
   return (
@@ -42,31 +44,43 @@ export const MatchStatsTable = memo(function MatchStatsTable({
                 <tr key={entry.player_id}>
                   <td style={commonStyles.td}>{playerName}</td>
                   <td style={commonStyles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={commonStyles.input}
-                      value={stats.goals}
-                      onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
-                    />
+                    {isAuthenticated ? (
+                      <input
+                        type="number"
+                        min={0}
+                        style={commonStyles.input}
+                        value={stats.goals}
+                        onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
+                      />
+                    ) : (
+                      stats.goals
+                    )}
                   </td>
                   <td style={commonStyles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={commonStyles.input}
-                      value={stats.assists}
-                      onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
-                    />
+                    {isAuthenticated ? (
+                      <input
+                        type="number"
+                        min={0}
+                        style={commonStyles.input}
+                        value={stats.assists}
+                        onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
+                      />
+                    ) : (
+                      stats.assists
+                    )}
                   </td>
                   <td style={commonStyles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={commonStyles.input}
-                      value={stats.minutes_played}
-                      onChange={(e) => onStatChange(entry.player_id, "minutes_played", Number(e.target.value))}
-                    />
+                    {isAuthenticated ? (
+                      <input
+                        type="number"
+                        min={0}
+                        style={commonStyles.input}
+                        value={stats.minutes_played}
+                        onChange={(e) => onStatChange(entry.player_id, "minutes_played", Number(e.target.value))}
+                      />
+                    ) : (
+                      stats.minutes_played
+                    )}
                   </td>
                 </tr>
               );

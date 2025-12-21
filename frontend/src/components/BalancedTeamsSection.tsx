@@ -9,6 +9,7 @@ interface BalancedTeamsSectionProps {
   hasExistingTeams: boolean;
   canGenerateTeams: boolean;
   onGenerate: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 export const BalancedTeamsSection = memo(function BalancedTeamsSection({
@@ -16,26 +17,29 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
   hasExistingTeams,
   canGenerateTeams,
   onGenerate,
+  isAuthenticated,
 }: BalancedTeamsSectionProps) {
   const { t } = useTranslation();
   return (
     <section style={commonStyles.section}>
       <div style={commonStyles.sectionHeader}>
         <h2 style={commonStyles.subheading}>{t.balancedTeams}</h2>
-        <button
-          style={{
-            ...commonStyles.button,
-            opacity: hasExistingTeams || !canGenerateTeams ? 0.6 : 1,
-            cursor: hasExistingTeams || !canGenerateTeams ? "not-allowed" : "pointer",
-          }}
-          onClick={() => void onGenerate()}
-          disabled={hasExistingTeams || !canGenerateTeams}
-          title={
-            !canGenerateTeams ? "Au moins 10 joueurs disponibles requis" : hasExistingTeams ? "Équipes déjà assignées" : undefined
-          }
-        >
-          {t.generateBalancedTeams}
-        </button>
+        {isAuthenticated && (
+          <button
+            style={{
+              ...commonStyles.button,
+              opacity: hasExistingTeams || !canGenerateTeams ? 0.6 : 1,
+              cursor: hasExistingTeams || !canGenerateTeams ? "not-allowed" : "pointer",
+            }}
+            onClick={() => void onGenerate()}
+            disabled={hasExistingTeams || !canGenerateTeams}
+            title={
+              !canGenerateTeams ? "Au moins 10 joueurs disponibles requis" : hasExistingTeams ? "Équipes déjà assignées" : undefined
+            }
+          >
+            {t.generateBalancedTeams}
+          </button>
+        )}
       </div>
       {balanced ? (
         <div style={commonStyles.teamsGrid}>

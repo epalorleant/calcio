@@ -12,6 +12,7 @@ interface BenchStatsTableProps {
   benchTeams: Record<number, MatchTeam | null>;
   onTeamChange: (playerId: number, team: MatchTeam | null) => void;
   onStatChange: (playerId: number, field: "goals" | "assists" | "minutes_played", value: number) => void;
+  isAuthenticated: boolean;
 }
 
 export const BenchStatsTable = memo(function BenchStatsTable({
@@ -21,6 +22,7 @@ export const BenchStatsTable = memo(function BenchStatsTable({
   benchTeams,
   onTeamChange,
   onStatChange,
+  isAuthenticated,
 }: BenchStatsTableProps) {
   const { t } = useTranslation();
   return (
@@ -47,45 +49,61 @@ export const BenchStatsTable = memo(function BenchStatsTable({
                 <tr key={entry.player_id}>
                   <td style={commonStyles.td}>{playerName}</td>
                   <td style={commonStyles.td}>
-                    <select
-                      style={commonStyles.select}
-                      value={selectedTeam}
-                      onChange={(e) => {
-                        const value = e.target.value as MatchTeam | "";
-                        onTeamChange(entry.player_id, value === "" ? null : value);
-                      }}
-                    >
-                      <option value="">{t.selectTeam}</option>
-                      <option value="A">{t.teamA}</option>
-                      <option value="B">{t.teamB}</option>
-                    </select>
+                    {isAuthenticated ? (
+                      <select
+                        style={commonStyles.select}
+                        value={selectedTeam}
+                        onChange={(e) => {
+                          const value = e.target.value as MatchTeam | "";
+                          onTeamChange(entry.player_id, value === "" ? null : value);
+                        }}
+                      >
+                        <option value="">{t.selectTeam}</option>
+                        <option value="A">{t.teamA}</option>
+                        <option value="B">{t.teamB}</option>
+                      </select>
+                    ) : (
+                      selectedTeam || "—"
+                    )}
                   </td>
                   <td style={commonStyles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={commonStyles.input}
-                      value={stats.goals}
-                      onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
-                    />
+                    {isAuthenticated ? (
+                      <input
+                        type="number"
+                        min={0}
+                        style={commonStyles.input}
+                        value={stats.goals}
+                        onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
+                      />
+                    ) : (
+                      stats.goals
+                    )}
                   </td>
                   <td style={commonStyles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={commonStyles.input}
-                      value={stats.assists}
-                      onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
-                    />
+                    {isAuthenticated ? (
+                      <input
+                        type="number"
+                        min={0}
+                        style={commonStyles.input}
+                        value={stats.assists}
+                        onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
+                      />
+                    ) : (
+                      stats.assists
+                    )}
                   </td>
                   <td style={commonStyles.td}>
-                    <input
-                      type="number"
-                      min={0}
-                      style={commonStyles.input}
-                      value={stats.minutes_played}
-                      onChange={(e) => onStatChange(entry.player_id, "minutes_played", Number(e.target.value))}
-                    />
+                    {isAuthenticated ? (
+                      <input
+                        type="number"
+                        min={0}
+                        style={commonStyles.input}
+                        value={stats.minutes_played}
+                        onChange={(e) => onStatChange(entry.player_id, "minutes_played", Number(e.target.value))}
+                      />
+                    ) : (
+                      stats.minutes_played
+                    )}
                   </td>
                 </tr>
               );

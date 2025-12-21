@@ -27,6 +27,7 @@ interface MatchResultSectionProps {
   existingMatch: boolean;
   matchError: string | null;
   matchSuccess: string | null;
+  isAuthenticated: boolean;
 }
 
 export const MatchResultSection = memo(function MatchResultSection({
@@ -45,14 +46,21 @@ export const MatchResultSection = memo(function MatchResultSection({
   existingMatch,
   matchError,
   matchSuccess,
+  isAuthenticated,
 }: MatchResultSectionProps) {
   const { t } = useTranslation();
   return (
     <section style={commonStyles.section}>
       <h2 style={commonStyles.subheading}>{t.matchResult}</h2>
+      {!isAuthenticated && (
+        <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
+          {t.readOnlyMode}
+        </p>
+      )}
       {matchError && <p style={commonStyles.error}>{matchError}</p>}
       {matchSuccess && <p style={commonStyles.success}>{matchSuccess}</p>}
-      <div style={commonStyles.scoreRow}>
+      {isAuthenticated && (
+        <div style={commonStyles.scoreRow}>
         <label style={commonStyles.field}>
           <span style={commonStyles.label}>{t.scoreTeamA}</span>
           <input
@@ -83,6 +91,7 @@ export const MatchResultSection = memo(function MatchResultSection({
           />
         </label>
       </div>
+      )}
 
       <div style={commonStyles.teamsGrid}>
         <MatchStatsTable
@@ -91,6 +100,7 @@ export const MatchResultSection = memo(function MatchResultSection({
           playerLookup={players}
           playerStats={playerStats}
           onStatChange={onStatChange}
+          isAuthenticated={isAuthenticated}
         />
         <MatchStatsTable
           title={t.teamB}
@@ -98,6 +108,7 @@ export const MatchResultSection = memo(function MatchResultSection({
           playerLookup={players}
           playerStats={playerStats}
           onStatChange={onStatChange}
+          isAuthenticated={isAuthenticated}
         />
       </div>
 
@@ -108,11 +119,14 @@ export const MatchResultSection = memo(function MatchResultSection({
         benchTeams={benchTeams}
         onTeamChange={onBenchTeamChange}
         onStatChange={onStatChange}
+        isAuthenticated={isAuthenticated}
       />
 
-      <button style={{ ...commonStyles.button, marginTop: "0.75rem" }} onClick={() => void onSaveMatch()} disabled={savingMatch}>
-        {savingMatch ? t.saving : existingMatch ? t.updateResult : t.saveMatch}
-      </button>
+      {isAuthenticated && (
+        <button style={{ ...commonStyles.button, marginTop: "0.75rem" }} onClick={() => void onSaveMatch()} disabled={savingMatch}>
+          {savingMatch ? t.saving : existingMatch ? t.updateResult : t.saveMatch}
+        </button>
+      )}
     </section>
   );
 });
