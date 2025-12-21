@@ -85,8 +85,12 @@ async def create_match(payload: schemas.MatchWithStatsCreate, db: AsyncSession =
     await db.flush()
     await ratings.update_ratings_after_match(db, match)
     await db.commit()
-    await db.refresh(match)
-    return _compose_session_match_response(match, session_players=session.session_players)
+    # Load stats explicitly for response
+    stats_result = await db.execute(
+        select(models.PlayerStats).where(models.PlayerStats.match_id == match.id)
+    )
+    match_stats = stats_result.scalars().all()
+    return _compose_session_match_response(match, session_players=session.session_players, stats=match_stats)
 
 
 @router.put("/matches/{match_id}", response_model=schemas.SessionMatchRead)
@@ -145,8 +149,12 @@ async def update_match(
     await db.flush()
     await ratings.update_ratings_after_match(db, match)
     await db.commit()
-    await db.refresh(match)
-    return _compose_session_match_response(match, session_players=session.session_players)
+    # Load stats explicitly for response
+    stats_result = await db.execute(
+        select(models.PlayerStats).where(models.PlayerStats.match_id == match.id)
+    )
+    match_stats = stats_result.scalars().all()
+    return _compose_session_match_response(match, session_players=session.session_players, stats=match_stats)
 
 
 @router.get("/matches/{match_id}", response_model=schemas.SessionMatchRead)
@@ -162,7 +170,8 @@ async def get_match(match_id: int, db: AsyncSession = Depends(get_db)) -> schema
     match = result.scalars().first()
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
-    return _compose_session_match_response(match)
+    # Stats already loaded via selectinload
+    return _compose_session_match_response(match, stats=list(match.stats))
 
 
 @router.get("/sessions/{session_id}/match", response_model=schemas.SessionMatchRead)
@@ -235,12 +244,18 @@ async def complete_match(match_id: int, payload: MatchCompletionPayload, db: Asy
     await db.flush()
     await ratings.update_ratings_after_match(db, match)
     await db.commit()
-    await db.refresh(match)
-    return _compose_session_match_response(match)
+    # Load stats explicitly for response (stats already loaded via selectinload, but refresh to get latest)
+    stats_result = await db.execute(
+        select(models.PlayerStats).where(models.PlayerStats.match_id == match.id)
+    )
+    match_stats = stats_result.scalars().all()
+    return _compose_session_match_response(match, stats=match_stats)
 
 
 def _compose_session_match_response(
-    match: models.Match, session_players: list[models.SessionPlayer] | None = None
+    match: models.Match,
+    session_players: list[models.SessionPlayer] | None = None,
+    stats: list[models.PlayerStats] | None = None,
 ) -> schemas.SessionMatchRead:
     session = match.session
     players = session_players or (session.session_players if session else [])
@@ -248,13 +263,16 @@ def _compose_session_match_response(
     team_b = [sp for sp in players if sp.team == models.SessionTeam.B]
     bench = [sp for sp in players if sp.team == models.SessionTeam.BENCH or sp.team is None]
 
+    # Use provided stats or empty list (stats should always be provided to avoid lazy loading)
+    match_stats = stats if stats is not None else []
+
     return schemas.SessionMatchRead(
         id=match.id,
         session_id=match.session_id,
         score_team_a=match.score_team_a,
         score_team_b=match.score_team_b,
         notes=match.notes,
-        stats=list(match.stats),
+        stats=match_stats,
         team_a_players=team_a,
         team_b_players=team_b,
         bench_players=bench,

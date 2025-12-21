@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models
@@ -21,7 +22,12 @@ async def get_or_create_player_rating(db: AsyncSession, player_id: int) -> model
 
 
 async def update_ratings_after_match(db: AsyncSession, match: models.Match) -> None:
-    stats = list(match.stats)
+    """Update player ratings after a match based on their performance."""
+    # Load stats explicitly to avoid lazy loading
+    result = await db.execute(
+        select(models.PlayerStats).where(models.PlayerStats.match_id == match.id)
+    )
+    stats = result.scalars().all()
     team_a_stats = [stat for stat in stats if stat.team == models.MatchTeam.A]
     team_b_stats = [stat for stat in stats if stat.team == models.MatchTeam.B]
 
