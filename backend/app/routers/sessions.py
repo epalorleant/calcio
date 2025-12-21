@@ -167,7 +167,6 @@ async def set_availability_batch(
     payload: AvailabilityBatch,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[models.User, Depends(get_current_admin_user)],
-    db: AsyncSession = Depends(get_db),
 ) -> list[schemas.SessionPlayerRead]:
     session = await db.get(models.Session, session_id)
     if not session:
