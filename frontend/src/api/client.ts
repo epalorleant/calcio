@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
-import { getStoredToken, clearTokens, refreshAccessToken } from "./auth";
+import { getStoredToken, getStoredRefreshToken, clearTokens, refreshAccessToken } from "./auth";
 
 const client = axios.create({
   // Prefer runtime config (injected via config.js), then build-time env, then same-origin root.
