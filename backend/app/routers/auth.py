@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.config import settings
 from ..db import get_db
 from ..models import Player, User
-from .dependencies import get_current_active_user
-from .schemas import RefreshTokenRequest, Token, UserLogin, UserRead, UserRegister
-from .security import (
+from ..auth.dependencies import get_current_active_user
+from ..auth.schemas import RefreshTokenRequest, Token, UserLogin, UserRead, UserRegister
+from ..auth.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
