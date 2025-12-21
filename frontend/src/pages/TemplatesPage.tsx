@@ -14,8 +14,10 @@ import { TemplateCard } from "../components/TemplateCard";
 import { TemplateForm } from "../components/TemplateForm";
 import { CreateSessionFromTemplateModal } from "../components/CreateSessionFromTemplateModal";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 export default function TemplatesPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<SessionTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ export default function TemplatesPage() {
       setTemplates(data);
     } catch (err) {
       console.error(err);
-      setError("Failed to load templates.");
+      setError(t.failedToLoadTemplates);
     } finally {
       setLoading(false);
     }
@@ -68,12 +70,12 @@ export default function TemplatesPage() {
       await loadTemplates();
     } catch (err) {
       console.error(err);
-      setError(editingTemplate ? "Failed to update template." : "Failed to create template.");
+      setError(editingTemplate ? t.failedToUpdateTemplate : t.failedToCreateTemplate);
     }
   };
 
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm("Delete this template? Sessions created from this template will not be deleted.");
+    const confirmed = window.confirm(t.deleteTemplateConfirm);
     if (!confirmed) return;
     try {
       setError(null);
@@ -81,7 +83,7 @@ export default function TemplatesPage() {
       await loadTemplates();
     } catch (err) {
       console.error(err);
-      setError("Failed to delete template.");
+      setError(t.failedToDeleteTemplate);
     }
   };
 
@@ -100,20 +102,20 @@ export default function TemplatesPage() {
     const template = templates.find((t) => t.id === id);
     if (!template) return;
 
-    const confirmed = window.confirm(
-      `Generate all recurring sessions for "${template.name}"? This will create sessions from ${template.recurrence_start ? new Date(template.recurrence_start).toLocaleDateString() : "start"} to ${template.recurrence_end ? new Date(template.recurrence_end).toLocaleDateString() : "end"}.`
-    );
+    const startDate = template.recurrence_start ? new Date(template.recurrence_start).toLocaleDateString() : "début";
+    const endDate = template.recurrence_end ? new Date(template.recurrence_end).toLocaleDateString() : "fin";
+    const confirmed = window.confirm(t.generateRecurringConfirm(template.name, startDate, endDate));
     if (!confirmed) return;
 
     try {
       setError(null);
       setLoading(true);
       const sessions = await generateRecurringSessions(id);
-      alert(`Successfully created ${sessions.length} session${sessions.length !== 1 ? "s" : ""}.`);
+      alert(t.successfullyCreated(sessions.length));
       await loadTemplates();
     } catch (err) {
       console.error(err);
-      setError("Failed to generate recurring sessions.");
+      setError(t.failedToGenerateRecurring);
     } finally {
       setLoading(false);
     }
@@ -123,15 +125,15 @@ export default function TemplatesPage() {
   return (
     <div style={commonStyles.container}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h1 style={commonStyles.heading}>Session Templates</h1>
+        <h1 style={commonStyles.heading}>{t.sessionTemplates}</h1>
         <button style={commonStyles.button} onClick={handleCreate}>
-          Create Template
+          {t.createTemplate}
         </button>
       </div>
 
       {showForm && (
         <div style={commonStyles.card}>
-          <h2 style={commonStyles.subheading}>{editingTemplate ? "Edit Template" : "Create Template"}</h2>
+          <h2 style={commonStyles.subheading}>{editingTemplate ? t.editTemplate : t.createTemplate}</h2>
           <TemplateForm
             template={editingTemplate}
             onSubmit={handleSubmit}
@@ -146,9 +148,9 @@ export default function TemplatesPage() {
 
       {!showForm && (
         <>
-          {loading && <p>Loading templates...</p>}
+          {loading && <p>{t.loadingTemplates}</p>}
           {error && <p style={commonStyles.error}>{error}</p>}
-          {!loading && templates.length === 0 && <p>No templates yet. Create your first template!</p>}
+          {!loading && templates.length === 0 && <p>{t.noTemplates}</p>}
 
           {templates.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

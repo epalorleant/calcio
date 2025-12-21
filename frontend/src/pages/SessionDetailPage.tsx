@@ -26,8 +26,10 @@ import { AvailabilityManagement } from "../components/AvailabilityManagement";
 import { BalancedTeamsSection } from "../components/BalancedTeamsSection";
 import { MatchResultSection } from "../components/MatchResultSection";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 export default function SessionDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -73,7 +75,7 @@ export default function SessionDetailPage() {
 
   const loadData = async () => {
     if (!sessionId) {
-      setError("Invalid session id.");
+      setError(t.invalidSession);
       return;
     }
     setExistingMatch(null);
@@ -96,7 +98,7 @@ export default function SessionDetailPage() {
       await loadMatch(sessionId);
     } catch (err) {
       console.error(err);
-      setError("Failed to load session details.");
+      setError("Échec du chargement des détails de la session.");
     } finally {
       setLoading(false);
     }
@@ -260,12 +262,12 @@ export default function SessionDetailPage() {
     if (!sessionId) return;
     const participants = [...teamAPlayers, ...teamBPlayers, ...benchPlayers];
     if (participants.length === 0) {
-      setMatchError("Add players to the session before saving a result.");
+      setMatchError(t.addPlayersBeforeSaving);
       return;
     }
     const missingBenchTeams = benchPlayers.filter((entry) => !benchTeams[entry.player_id]);
     if (missingBenchTeams.length > 0) {
-      setMatchError("Select which team each bench player appeared for.");
+      setMatchError(t.selectBenchTeam);
       return;
     }
 
@@ -286,7 +288,7 @@ export default function SessionDetailPage() {
     }
 
     if (teamAGoals !== matchForm.scoreTeamA || teamBGoals !== matchForm.scoreTeamB) {
-      setMatchError("Team scores must match the sum of individual goals.");
+      setMatchError(t.scoresMustMatch);
       return;
     }
 
@@ -322,13 +324,13 @@ export default function SessionDetailPage() {
         ? await updateMatch(existingMatch.id, payload)
         : await createMatch(payload);
       setExistingMatch(savedMatch);
-      setMatchSuccess(existingMatch ? "Match result updated." : "Match result saved.");
+      setMatchSuccess(existingMatch ? t.matchResultUpdated : t.matchResultSaved);
     } catch (err) {
       console.error(err);
       if (isAxiosError(err) && err.response?.data?.detail) {
         setMatchError(String(err.response.data.detail));
       } else {
-        setMatchError("Failed to save match result.");
+        setMatchError(t.failedToSaveMatch);
       }
     } finally {
       setSavingMatch(false);
@@ -346,34 +348,34 @@ export default function SessionDetailPage() {
       setAvailabilityList(availabilityRes);
     } catch (err) {
       console.error(err);
-      setError("Failed to generate balanced teams.");
+      setError(t.failedToGenerateTeams);
     } finally {
       setLoading(false);
     }
   };
 
   if (!sessionId) {
-    return <p>Invalid session.</p>;
+    return <p>{t.invalidSession}</p>;
   }
 
   return (
     <div style={commonStyles.container}>
       <Link to="/sessions" style={commonStyles.linkButton} reloadDocument>
-        ← Back to sessions
+        ← {t.backToSessions}
       </Link>
-      <h1 style={commonStyles.heading}>Session Details</h1>
-      {loading && <p>Loading...</p>}
+      <h1 style={commonStyles.heading}>{t.sessionDetails}</h1>
+      {loading && <p>{t.loading}</p>}
       {error && <p style={commonStyles.error}>{error}</p>}
       {session && (
         <div style={commonStyles.card}>
           <p>
-            <strong>Date:</strong> {new Date(session.date).toLocaleString()}
+            <strong>{t.date}:</strong> {new Date(session.date).toLocaleString()}
           </p>
           <p>
-            <strong>Location:</strong> {session.location}
+            <strong>{t.location}:</strong> {session.location}
           </p>
           <p>
-            <strong>Status:</strong> {session.status}
+            <strong>{t.status}:</strong> {session.status === "PLANNED" ? t.planned : session.status === "COMPLETED" ? t.completed : t.cancelled}
           </p>
         </div>
       )}

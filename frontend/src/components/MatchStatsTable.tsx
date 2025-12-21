@@ -2,6 +2,7 @@ import { memo } from "react";
 import type { Player } from "../api/players";
 import type { SessionPlayer } from "../api/sessions";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface MatchStatsTableProps {
   title: string;
@@ -18,18 +19,19 @@ export const MatchStatsTable = memo(function MatchStatsTable({
   playerStats,
   onStatChange,
 }: MatchStatsTableProps) {
+  const { t } = useTranslation();
   return (
     <div style={commonStyles.card}>
       <h3 style={commonStyles.smallHeading}>{title}</h3>
-      {players.length === 0 && <p style={commonStyles.muted}>Assign players to this team to record stats.</p>}
+      {players.length === 0 && <p style={commonStyles.muted}>{t.assignPlayersToRecordStats}</p>}
       {players.length > 0 && (
         <table style={commonStyles.table}>
           <thead>
             <tr>
-              <th style={commonStyles.th}>Player</th>
-              <th style={commonStyles.th}>Goals</th>
-              <th style={commonStyles.th}>Assists</th>
-              <th style={commonStyles.th}>Minutes</th>
+              <th style={commonStyles.th}>{t.player}</th>
+              <th style={commonStyles.th}>{t.goals}</th>
+              <th style={commonStyles.th}>{t.assists}</th>
+              <th style={commonStyles.th}>{t.minutes}</th>
             </tr>
           </thead>
           <tbody>

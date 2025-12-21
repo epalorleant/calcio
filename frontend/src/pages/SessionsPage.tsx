@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, deleteSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
+import { useTranslation } from "../i18n/useTranslation";
 
 const defaultDateValue = () => new Date().toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
 
 export default function SessionsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
@@ -24,14 +26,14 @@ export default function SessionsPage() {
       const data = await getSessions();
       if (!Array.isArray(data)) {
         console.error("Unexpected sessions payload", data);
-        setError("Unexpected response from server.");
+        setError("Réponse inattendue du serveur.");
         setSessions([]);
         return;
       }
       setSessions(data);
     } catch (err) {
       console.error(err);
-      setError("Failed to load sessions.");
+      setError(t.failedToLoadSessions);
     } finally {
       setLoading(false);
     }
@@ -44,7 +46,7 @@ export default function SessionsPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.location.trim() || !form.date) {
-      setError("Date and location are required.");
+      setError(t.dateAndLocationRequired);
       return;
     }
     try {
@@ -57,12 +59,12 @@ export default function SessionsPage() {
       await loadSessions();
     } catch (err) {
       console.error(err);
-      setError("Failed to create session.");
+      setError(t.failedToCreateSession);
     }
   };
 
   const handleDelete = async (sessionId: number) => {
-    const confirmed = window.confirm("Delete this session?");
+    const confirmed = window.confirm(t.deleteSessionConfirm);
     if (!confirmed) return;
     try {
       setError(null);
@@ -70,17 +72,17 @@ export default function SessionsPage() {
       await loadSessions();
     } catch (err) {
       console.error(err);
-      setError("Failed to delete session.");
+      setError(t.failedToDeleteSession);
     }
   };
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>Sessions</h1>
+      <h1 style={styles.heading}>{t.sessionsPage}</h1>
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <label style={styles.field}>
-          <span style={styles.label}>Date & time</span>
+          <span style={styles.label}>{t.dateTime}</span>
           <input
             style={styles.input}
             type="datetime-local"
@@ -90,18 +92,18 @@ export default function SessionsPage() {
           />
         </label>
         <label style={styles.field}>
-          <span style={styles.label}>Location</span>
+          <span style={styles.label}>{t.location}</span>
           <input
             style={styles.input}
             type="text"
             value={form.location}
             onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-            placeholder="e.g. Community Gym"
+            placeholder="ex. Salle communautaire"
             required
           />
         </label>
         <label style={styles.field}>
-          <span style={styles.label}>Max players</span>
+          <span style={styles.label}>{t.maxPlayers}</span>
           <input
             style={styles.input}
             type="number"
@@ -113,22 +115,22 @@ export default function SessionsPage() {
           />
         </label>
         <button style={styles.button} type="submit">
-          Create Session
+          {t.createSession}
         </button>
       </form>
 
-      {loading && <p>Loading sessions...</p>}
+      {loading && <p>{t.loadingSessions}</p>}
       {error && <p style={styles.error}>{error}</p>}
-      {!loading && sessions.length === 0 && <p>No sessions yet.</p>}
+      {!loading && sessions.length === 0 && <p>{t.noSessions}</p>}
 
       {sessions.length > 0 && (
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>Date</th>
-              <th style={styles.th}>Location</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Actions</th>
+              <th style={styles.th}>{t.date}</th>
+              <th style={styles.th}>{t.location}</th>
+              <th style={styles.th}>{t.status}</th>
+              <th style={styles.th}>{t.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -136,19 +138,19 @@ export default function SessionsPage() {
               <tr key={session.id}>
                 <td style={styles.td}>{new Date(session.date).toLocaleString()}</td>
                 <td style={styles.td}>{session.location}</td>
-                <td style={styles.td}>{session.status}</td>
+                <td style={styles.td}>{session.status === "PLANNED" ? t.planned : session.status === "COMPLETED" ? t.completed : t.cancelled}</td>
                 <td style={styles.td}>
                   <button
                     style={styles.linkButton}
                     onClick={() => navigate(`/sessions/${session.id}`)}
                   >
-                    View details
+                    {t.viewDetails}
                   </button>
                   <button
                     style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
                     onClick={() => void handleDelete(session.id)}
                   >
-                    Delete
+                    {t.delete}
                   </button>
                 </td>
               </tr>

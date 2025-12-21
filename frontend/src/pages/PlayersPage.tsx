@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
 import { createPlayer, deletePlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
+import { useTranslation } from "../i18n/useTranslation";
 
 export default function PlayersPage() {
+  const { t } = useTranslation();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,14 +22,14 @@ export default function PlayersPage() {
       const data = await getPlayers();
       if (!Array.isArray(data)) {
         console.error("Unexpected players payload", data);
-        setError("Unexpected response from server.");
+        setError("Réponse inattendue du serveur.");
         setPlayers([]);
         return;
       }
       setPlayers(data);
     } catch (err) {
       console.error(err);
-      setError("Failed to load players.");
+      setError(t.failedToLoadPlayers);
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,7 @@ export default function PlayersPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setError("Name is required.");
+      setError(t.nameRequired);
       return;
     }
     try {
@@ -54,7 +56,7 @@ export default function PlayersPage() {
       await fetchPlayers();
     } catch (err) {
       console.error(err);
-      setError("Failed to create player.");
+      setError(t.failedToCreatePlayer);
     }
   };
 
@@ -69,12 +71,12 @@ export default function PlayersPage() {
       await fetchPlayers();
     } catch (err) {
       console.error(err);
-      setError("Failed to update player.");
+      setError(t.failedToUpdatePlayer);
     }
   };
 
   const handleDelete = async (player: Player) => {
-    const confirmed = window.confirm(`Delete player "${player.name}"?`);
+    const confirmed = window.confirm(t.deletePlayerConfirm(player.name));
     if (!confirmed) return;
     try {
       setError(null);
@@ -82,26 +84,26 @@ export default function PlayersPage() {
       await fetchPlayers();
     } catch (err) {
       console.error(err);
-      setError("Failed to delete player.");
+      setError(t.failedToDeletePlayer);
     }
   };
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>Players</h1>
+      <h1 style={styles.heading}>{t.playersPage}</h1>
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <input
             style={styles.input}
             type="text"
-            placeholder="Name"
+            placeholder={t.playerName}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
         />
         <input
             style={styles.input}
             type="text"
-            placeholder="Preferred position"
+            placeholder={t.preferredPosition}
             value={form.preferred_position ?? ""}
             onChange={(e) => setForm((f) => ({ ...f, preferred_position: e.target.value }))}
         />
@@ -111,25 +113,25 @@ export default function PlayersPage() {
               checked={form.active ?? true}
               onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
           />
-          <span style={styles.checkboxLabel}>Active</span>
+          <span style={styles.checkboxLabel}>{t.active}</span>
         </label>
-        <button style={styles.button} type="submit">Add Player</button>
+        <button style={styles.button} type="submit">{t.addPlayer}</button>
       </form>
 
-      {loading && <p>Loading players...</p>}
+      {loading && <p>{t.loadingPlayers}</p>}
       {error && <p style={styles.error}>{error}</p>}
 
-      {!loading && players.length === 0 && <p>No players yet.</p>}
+      {!loading && players.length === 0 && <p>{t.noPlayers}</p>}
 
       {players.length > 0 && (
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>Name</th>
-              <th style={styles.th}>Preferred Position</th>
-              <th style={styles.th}>Rating</th>
-              <th style={styles.th}>Active</th>
-              <th style={styles.th}>Actions</th>
+              <th style={styles.th}>{t.playerName}</th>
+              <th style={styles.th}>{t.preferredPosition}</th>
+              <th style={styles.th}>Note</th>
+              <th style={styles.th}>{t.active}</th>
+              <th style={styles.th}>{t.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -140,16 +142,16 @@ export default function PlayersPage() {
                 <td style={styles.td}>
                   {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
                 </td>
-                <td style={styles.td}>{player.active ? "Yes" : "No"}</td>
+                <td style={styles.td}>{player.active ? t.yes : t.no}</td>
                 <td style={styles.td}>
                   <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
-                    Set {player.active ? "Inactive" : "Active"}
+                    {player.active ? "Désactiver" : "Activer"}
                   </button>
                   <button
                     style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
                     onClick={() => void handleDelete(player)}
                   >
-                    Delete
+                    {t.delete}
                   </button>
                 </td>
               </tr>

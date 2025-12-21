@@ -2,6 +2,7 @@ import { memo } from "react";
 import type { BalancedTeamsResponse } from "../api/sessions";
 import { TeamCard } from "./TeamCard";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface BalancedTeamsSectionProps {
   balanced: BalancedTeamsResponse | null;
@@ -16,10 +17,11 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
   canGenerateTeams,
   onGenerate,
 }: BalancedTeamsSectionProps) {
+  const { t } = useTranslation();
   return (
     <section style={commonStyles.section}>
       <div style={commonStyles.sectionHeader}>
-        <h2 style={commonStyles.subheading}>Balanced Teams</h2>
+        <h2 style={commonStyles.subheading}>{t.balancedTeams}</h2>
         <button
           style={{
             ...commonStyles.button,
@@ -29,22 +31,22 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
           onClick={() => void onGenerate()}
           disabled={hasExistingTeams || !canGenerateTeams}
           title={
-            !canGenerateTeams ? "Need at least 10 available players" : hasExistingTeams ? "Teams already assigned" : undefined
+            !canGenerateTeams ? "Au moins 10 joueurs disponibles requis" : hasExistingTeams ? "Équipes déjà assignées" : undefined
           }
         >
-          Generate balanced teams
+          {t.generateBalancedTeams}
         </button>
       </div>
       {balanced ? (
         <div style={commonStyles.teamsGrid}>
-          <TeamCard title="Team A" players={balanced.team_a} />
-          <TeamCard title="Team B" players={balanced.team_b} />
-          <TeamCard title="Bench" players={balanced.bench} />
+          <TeamCard title={t.teamA} players={balanced.team_a} />
+          <TeamCard title={t.teamB} players={balanced.team_b} />
+          <TeamCard title={t.bench} players={balanced.bench} />
         </div>
       ) : (
-        <p>No teams generated yet.</p>
+        <p>{t.noTeamAssignments}</p>
       )}
-      {balanced && <p>Balance score: {balanced.balance_score.toFixed(2)}</p>}
+      {balanced && <p>{t.balanceScore}: {balanced.balance_score.toFixed(2)}</p>}
     </section>
   );
 });

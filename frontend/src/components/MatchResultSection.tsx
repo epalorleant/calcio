@@ -5,6 +5,7 @@ import type { SessionPlayer } from "../api/sessions";
 import { BenchStatsTable } from "./BenchStatsTable";
 import { MatchStatsTable } from "./MatchStatsTable";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface MatchResultSectionProps {
   matchForm: {
@@ -45,14 +46,15 @@ export const MatchResultSection = memo(function MatchResultSection({
   matchError,
   matchSuccess,
 }: MatchResultSectionProps) {
+  const { t } = useTranslation();
   return (
     <section style={commonStyles.section}>
-      <h2 style={commonStyles.subheading}>Match result</h2>
+      <h2 style={commonStyles.subheading}>{t.matchResult}</h2>
       {matchError && <p style={commonStyles.error}>{matchError}</p>}
       {matchSuccess && <p style={commonStyles.success}>{matchSuccess}</p>}
       <div style={commonStyles.scoreRow}>
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Score Team A</span>
+          <span style={commonStyles.label}>{t.scoreTeamA}</span>
           <input
             type="number"
             min={0}
@@ -62,7 +64,7 @@ export const MatchResultSection = memo(function MatchResultSection({
           />
         </label>
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Score Team B</span>
+          <span style={commonStyles.label}>{t.scoreTeamB}</span>
           <input
             type="number"
             min={0}
@@ -72,7 +74,7 @@ export const MatchResultSection = memo(function MatchResultSection({
           />
         </label>
         <label style={{ ...commonStyles.field, flex: 1 }}>
-          <span style={commonStyles.label}>Notes</span>
+          <span style={commonStyles.label}>{t.notes}</span>
           <textarea
             style={commonStyles.textarea}
             rows={2}
@@ -84,14 +86,14 @@ export const MatchResultSection = memo(function MatchResultSection({
 
       <div style={commonStyles.teamsGrid}>
         <MatchStatsTable
-          title="Team A"
+          title={t.teamA}
           players={teamAPlayers}
           playerLookup={players}
           playerStats={playerStats}
           onStatChange={onStatChange}
         />
         <MatchStatsTable
-          title="Team B"
+          title={t.teamB}
           players={teamBPlayers}
           playerLookup={players}
           playerStats={playerStats}
@@ -109,7 +111,7 @@ export const MatchResultSection = memo(function MatchResultSection({
       />
 
       <button style={{ ...commonStyles.button, marginTop: "0.75rem" }} onClick={() => void onSaveMatch()} disabled={savingMatch}>
-        {savingMatch ? "Saving..." : existingMatch ? "Update result" : "Save result"}
+        {savingMatch ? "Enregistrement..." : existingMatch ? "Mettre à jour le résultat" : t.saveMatch}
       </button>
     </section>
   );

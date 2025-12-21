@@ -3,6 +3,7 @@ import type { MatchTeam } from "../api/matches";
 import type { Player } from "../api/players";
 import type { SessionPlayer } from "../api/sessions";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface BenchStatsTableProps {
   players: SessionPlayer[];
@@ -21,19 +22,20 @@ export const BenchStatsTable = memo(function BenchStatsTable({
   onTeamChange,
   onStatChange,
 }: BenchStatsTableProps) {
+  const { t } = useTranslation();
   return (
     <div style={commonStyles.card}>
-      <h3 style={commonStyles.smallHeading}>Bench</h3>
-      {players.length === 0 && <p style={commonStyles.muted}>No bench players assigned.</p>}
+      <h3 style={commonStyles.smallHeading}>{t.bench}</h3>
+      {players.length === 0 && <p style={commonStyles.muted}>{t.noBenchPlayers}</p>}
       {players.length > 0 && (
         <table style={commonStyles.table}>
           <thead>
             <tr>
-              <th style={commonStyles.th}>Player</th>
-              <th style={commonStyles.th}>Played for</th>
-              <th style={commonStyles.th}>Goals</th>
-              <th style={commonStyles.th}>Assists</th>
-              <th style={commonStyles.th}>Minutes</th>
+              <th style={commonStyles.th}>{t.player}</th>
+              <th style={commonStyles.th}>{t.playedFor}</th>
+              <th style={commonStyles.th}>{t.goals}</th>
+              <th style={commonStyles.th}>{t.assists}</th>
+              <th style={commonStyles.th}>{t.minutes}</th>
             </tr>
           </thead>
           <tbody>
@@ -53,9 +55,9 @@ export const BenchStatsTable = memo(function BenchStatsTable({
                         onTeamChange(entry.player_id, value === "" ? null : value);
                       }}
                     >
-                      <option value="">Select team</option>
-                      <option value="A">Team A</option>
-                      <option value="B">Team B</option>
+                      <option value="">{t.selectTeam}</option>
+                      <option value="A">{t.teamA}</option>
+                      <option value="B">{t.teamB}</option>
                     </select>
                   </td>
                   <td style={commonStyles.td}>

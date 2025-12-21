@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { SessionTemplate } from "../api/templates";
 import { createSessionFromTemplate } from "../api/templates";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface CreateSessionFromTemplateModalProps {
   template: SessionTemplate;
@@ -14,6 +15,7 @@ export function CreateSessionFromTemplateModal({
   onClose,
   onSuccess,
 }: CreateSessionFromTemplateModalProps) {
+  const { t } = useTranslation();
   const [date, setDate] = useState(() => {
     // Default to next occurrence of the day of week, or today
     const today = new Date();
@@ -48,7 +50,7 @@ export function CreateSessionFromTemplateModal({
       onSuccess(session.id);
       onClose();
     } catch (err) {
-      setError("Failed to create session");
+      setError("Échec de la création de la session");
       console.error(err);
     } finally {
       setLoading(false);
@@ -80,22 +82,22 @@ export function CreateSessionFromTemplateModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={commonStyles.heading}>Create Session from Template</h2>
+        <h2 style={commonStyles.heading}>{t.createSessionFromTemplate}</h2>
         <div style={{ marginBottom: "1rem" }}>
           <p>
-            <strong>Template:</strong> {template.name}
+            <strong>Modèle:</strong> {template.name}
           </p>
           <p>
-            <strong>Location:</strong> {template.location}
+            <strong>{t.location}:</strong> {template.location}
           </p>
           <p>
-            <strong>Time:</strong> {template.time_of_day}
+            <strong>{t.time}:</strong> {template.time_of_day}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={commonStyles.form}>
           <label style={commonStyles.field}>
-            <span style={commonStyles.label}>Date</span>
+            <span style={commonStyles.label}>{t.date}</span>
             <input
               type="datetime-local"
               style={commonStyles.input}
@@ -106,7 +108,7 @@ export function CreateSessionFromTemplateModal({
           </label>
 
           <label style={commonStyles.field}>
-            <span style={commonStyles.label}>Max Players</span>
+            <span style={commonStyles.label}>{t.maxPlayersLabel}</span>
             <input
               type="number"
               min={2}
@@ -121,14 +123,14 @@ export function CreateSessionFromTemplateModal({
 
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
             <button type="submit" style={commonStyles.button} disabled={loading}>
-              {loading ? "Creating..." : "Create Session"}
+              {loading ? "Création..." : t.createSession}
             </button>
             <button
               type="button"
               style={{ ...commonStyles.button, backgroundColor: "#6b7280" }}
               onClick={onClose}
             >
-              Cancel
+              {t.cancel}
             </button>
           </div>
         </form>

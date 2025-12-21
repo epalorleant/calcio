@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { RecurrenceType, SessionTemplate, SessionTemplateCreate, SessionTemplateUpdate } from "../api/templates";
 import { commonStyles } from "../styles/common";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface TemplateFormProps {
   template?: SessionTemplate | null;
@@ -12,6 +13,7 @@ interface TemplateFormProps {
 }
 
 export function TemplateForm({ template, onSubmit, onCancel, loading = false, error }: TemplateFormProps) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<SessionTemplateCreate>({
     name: template?.name || "",
     description: template?.description || null,
@@ -29,14 +31,14 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
   );
 
   const dayNames = [
-    { value: null, label: "One-time" },
-    { value: 0, label: "Monday" },
-    { value: 1, label: "Tuesday" },
-    { value: 2, label: "Wednesday" },
-    { value: 3, label: "Thursday" },
-    { value: 4, label: "Friday" },
-    { value: 5, label: "Saturday" },
-    { value: 6, label: "Sunday" },
+    { value: null, label: t.oneTime },
+    { value: 0, label: t.monday },
+    { value: 1, label: t.tuesday },
+    { value: 2, label: t.wednesday },
+    { value: 3, label: t.thursday },
+    { value: 4, label: t.friday },
+    { value: 5, label: t.saturday },
+    { value: 6, label: t.sunday },
   ];
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
     <form onSubmit={handleSubmit} style={{ ...commonStyles.form, maxWidth: "600px", width: "100%" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Name *</span>
+          <span style={commonStyles.label}>{t.templateName} *</span>
           <input
             type="text"
             style={commonStyles.input}
@@ -92,7 +94,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
         </label>
 
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Description</span>
+          <span style={commonStyles.label}>{t.description}</span>
           <textarea
             style={commonStyles.textarea}
             rows={3}
@@ -103,7 +105,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
         </label>
 
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Location *</span>
+          <span style={commonStyles.label}>{t.location} *</span>
           <input
             type="text"
             style={commonStyles.input}
@@ -116,7 +118,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
           <label style={commonStyles.field}>
-            <span style={commonStyles.label}>Time *</span>
+            <span style={commonStyles.label}>{t.time} *</span>
             <input
               type="time"
               style={commonStyles.input}
@@ -127,7 +129,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
           </label>
 
           <label style={commonStyles.field}>
-            <span style={commonStyles.label}>Day of Week</span>
+            <span style={commonStyles.label}>{t.dayOfWeek}</span>
             <select
               style={commonStyles.select}
               value={form.day_of_week === null ? "" : form.day_of_week}
@@ -148,7 +150,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
         </div>
 
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Max Players *</span>
+          <span style={commonStyles.label}>{t.maxPlayersLabel} *</span>
           <input
             type="number"
             min={2}
@@ -161,23 +163,23 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
         </label>
 
         <label style={commonStyles.field}>
-          <span style={commonStyles.label}>Recurrence Type</span>
+          <span style={commonStyles.label}>{t.recurrenceType}</span>
           <select
             style={commonStyles.select}
             value={recurrenceType}
             onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType | "")}
           >
-            <option value="">None (One-time template)</option>
-            <option value="WEEKLY">Weekly</option>
-            <option value="BIWEEKLY">Bi-weekly</option>
-            <option value="MONTHLY">Monthly</option>
+            <option value="">{t.oneTimeTemplate}</option>
+            <option value="WEEKLY">{t.weekly}</option>
+            <option value="BIWEEKLY">{t.biweekly}</option>
+            <option value="MONTHLY">{t.monthly}</option>
           </select>
         </label>
 
         {recurrenceType && recurrenceType !== "NONE" && (
           <>
             <label style={commonStyles.field}>
-              <span style={commonStyles.label}>Recurrence Start Date *</span>
+              <span style={commonStyles.label}>{t.recurrenceStart} *</span>
               <input
                 type="datetime-local"
                 style={commonStyles.input}
@@ -197,7 +199,7 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
             </label>
 
             <label style={commonStyles.field}>
-              <span style={commonStyles.label}>Recurrence End Date *</span>
+              <span style={commonStyles.label}>{t.recurrenceEnd} *</span>
               <input
                 type="datetime-local"
                 style={commonStyles.input}
@@ -222,14 +224,14 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
 
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
           <button type="submit" style={commonStyles.button} disabled={loading}>
-            {loading ? "Saving..." : template ? "Update Template" : "Create Template"}
+            {loading ? "Enregistrement..." : template ? t.updateTemplate : t.createTemplate}
           </button>
           <button
             type="button"
             style={{ ...commonStyles.button, backgroundColor: "#6b7280" }}
             onClick={onCancel}
           >
-            Cancel
+            {t.cancel}
           </button>
         </div>
       </div>
