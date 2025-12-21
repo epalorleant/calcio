@@ -56,8 +56,17 @@ async def get_current_active_user(
 async def get_current_admin_user(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
-    """Get the current admin user."""
-    if not current_user.is_admin:
+    """Get the current admin user (admin or root)."""
+    if not (current_user.is_admin or current_user.is_root):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+    return current_user
+
+
+async def get_current_root_user(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> User:
+    """Get the current root user."""
+    if not current_user.is_root:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Root access required")
     return current_user
 

@@ -36,6 +36,7 @@ class UserRead(BaseModel):
     username: str
     is_active: bool
     is_admin: bool
+    is_root: bool
     player_id: int | None = None
 
     class Config:
@@ -50,4 +51,15 @@ class UserWithPlayer(UserRead):
 class RefreshTokenRequest(BaseModel):
     """Refresh token request schema."""
     refresh_token: str
+
+
+class PasswordChangeRequest(BaseModel):
+    """Password change request schema."""
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+
+class GrantAdminRequest(BaseModel):
+    """Grant admin role request schema."""
+    user_id: int
 

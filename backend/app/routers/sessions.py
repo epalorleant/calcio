@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Annotated, Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from .. import models, schemas
+from ..auth.dependencies import get_current_admin_user
 from ..db import get_db
 from ..services import team_balance
 
@@ -16,7 +17,11 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 @router.post("/", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED)
 @router.post("", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED, include_in_schema=False)
-async def create_session(session_in: schemas.SessionCreate, db: AsyncSession = Depends(get_db)) -> schemas.SessionRead:
+async def create_session(
+    session_in: schemas.SessionCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> schemas.SessionRead:
     session = models.Session(
         date=session_in.date,
         location=session_in.location,
@@ -60,7 +65,10 @@ async def get_session(session_id: int, db: AsyncSession = Depends(get_db)) -> sc
 
 @router.patch("/{session_id}", response_model=schemas.SessionRead)
 async def update_session(
-    session_id: int, session_in: schemas.SessionUpdate, db: AsyncSession = Depends(get_db)
+    session_id: int,
+    session_in: schemas.SessionUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.SessionRead:
     session = await db.get(models.Session, session_id)
     if not session:
@@ -76,7 +84,11 @@ async def update_session(
 
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_session(session_id: int, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_session(
+    session_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> None:
     session = await db.get(models.Session, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
@@ -113,7 +125,8 @@ async def list_availability(session_id: int, db: AsyncSession = Depends(get_db))
 async def set_availability(
     session_id: int,
     payload: AvailabilityUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.SessionPlayerRead:
     session = await db.get(models.Session, session_id)
     if not session:
@@ -152,6 +165,8 @@ async def set_availability(
 async def set_availability_batch(
     session_id: int,
     payload: AvailabilityBatch,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.SessionPlayerRead]:
     session = await db.get(models.Session, session_id)
@@ -207,7 +222,11 @@ class BalancedTeamsResponse(BaseModel):
 
 
 @router.post("/{session_id}/balanced-teams", response_model=BalancedTeamsResponse)
-async def generate_balanced_session_teams(session_id: int, db: AsyncSession = Depends(get_db)) -> BalancedTeamsResponse:
+async def generate_balanced_session_teams(
+    session_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> BalancedTeamsResponse:
     session = await db.get(
         models.Session,
         session_id,

@@ -6,7 +6,8 @@ import { useAuth } from "../auth/AuthContext";
 
 export default function PlayersPage() {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isAdmin = user?.is_admin || user?.is_root;
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +95,7 @@ export default function PlayersPage() {
     <div style={styles.container}>
       <h1 style={styles.heading}>{t.playersPage}</h1>
 
-      {isAuthenticated && (
+      {isAdmin && (
         <form onSubmit={handleSubmit} style={styles.form}>
         <input
             style={styles.input}
@@ -153,7 +154,7 @@ export default function PlayersPage() {
                   {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
                 </td>
                 <td style={styles.td}>{player.active ? t.yes : t.no}</td>
-                {isAuthenticated && (
+                {isAdmin && (
                   <td style={styles.td}>
                     <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
                       {player.active ? t.deactivate : t.activate}

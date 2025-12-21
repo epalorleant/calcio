@@ -5,12 +5,21 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..core.config import settings
 from ..db import get_db
 from ..models import Player, User
-from ..auth.dependencies import get_current_active_user
-from ..auth.schemas import RefreshTokenRequest, Token, UserLogin, UserRead, UserRegister
+from ..auth.dependencies import get_current_active_user, get_current_root_user
+from ..auth.schemas import (
+    GrantAdminRequest,
+    PasswordChangeRequest,
+    RefreshTokenRequest,
+    Token,
+    UserLogin,
+    UserRead,
+    UserRegister,
+)
 from ..auth.security import (
     create_access_token,
     create_refresh_token,
@@ -169,6 +178,74 @@ async def get_current_user_info(
         username=current_user.username,
         is_active=current_user.is_active,
         is_admin=current_user.is_admin,
+        is_root=current_user.is_root,
         player_id=player_id,
     )
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    password_change: PasswordChangeRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    """Change password for the current user."""
+    if not verify_password(password_change.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password",
+        )
+
+    current_user.hashed_password = get_password_hash(password_change.new_password)
+    await db.commit()
+
+
+@router.get("/users", response_model=list[UserRead])
+async def list_users(
+    root_user: Annotated[User, Depends(get_current_root_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[UserRead]:
+    """List all users. Only root user can perform this action."""
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.player))
+        .order_by(User.created_at.desc())
+    )
+    users = result.scalars().all()
+    return [
+        UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            is_active=user.is_active,
+            is_admin=user.is_admin,
+            is_root=user.is_root,
+            player_id=user.player.id if user.player else None,
+        )
+        for user in users
+    ]
+
+
+@router.post("/grant-admin", status_code=status.HTTP_204_NO_CONTENT)
+async def grant_admin_role(
+    request: GrantAdminRequest,
+    root_user: Annotated[User, Depends(get_current_root_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    """Grant admin role to a user. Only root user can perform this action."""
+    target_user = await db.get(User, request.user_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if target_user.is_root:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot modify root user",
+        )
+
+    target_user.is_admin = True
+    await db.commit()
 

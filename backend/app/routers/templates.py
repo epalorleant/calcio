@@ -1,12 +1,13 @@
 """API router for session templates."""
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models, schemas
+from ..auth.dependencies import get_current_admin_user
 from ..db import get_db
 from ..services import template_service
 
@@ -17,7 +18,8 @@ router = APIRouter(prefix="/session-templates", tags=["templates"])
 @router.post("", response_model=schemas.SessionTemplateRead, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_template(
     template_in: schemas.SessionTemplateCreate,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.SessionTemplateRead:
     template = models.SessionTemplate(
         name=template_in.name,
@@ -99,7 +101,8 @@ async def get_template(
 async def update_template(
     template_id: int,
     template_in: schemas.SessionTemplateUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.SessionTemplateRead:
     template = await db.get(models.SessionTemplate, template_id)
     if not template:
@@ -117,7 +120,8 @@ async def update_template(
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template(
     template_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> None:
     template = await db.get(models.SessionTemplate, template_id)
     if not template:
@@ -133,7 +137,8 @@ async def delete_template(
 async def create_session_from_template(
     template_id: int,
     payload: schemas.CreateSessionFromTemplate,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.SessionRead:
     template = await db.get(models.SessionTemplate, template_id)
     if not template:
@@ -155,7 +160,8 @@ async def create_session_from_template(
 async def create_sessions_from_template(
     template_id: int,
     payload: schemas.CreateSessionsFromTemplate,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> list[schemas.SessionRead]:
     template = await db.get(models.SessionTemplate, template_id)
     if not template:
@@ -180,7 +186,8 @@ async def create_sessions_from_template(
 @router.post("/{template_id}/generate-recurring", response_model=list[schemas.SessionRead])
 async def generate_recurring_sessions(
     template_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> list[schemas.SessionRead]:
     template = await db.get(models.SessionTemplate, template_id)
     if not template:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from .. import models, schemas
+from ..auth.dependencies import get_current_admin_user
 from ..db import get_db
 from ..services import ratings
 
@@ -23,7 +24,11 @@ class MatchCompletionPayload(BaseModel):
 
 
 @router.post("/matches", response_model=schemas.SessionMatchRead, status_code=status.HTTP_201_CREATED)
-async def create_match(payload: schemas.MatchWithStatsCreate, db: AsyncSession = Depends(get_db)) -> schemas.SessionMatchRead:
+async def create_match(
+    payload: schemas.MatchWithStatsCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> schemas.SessionMatchRead:
     session = await db.get(
         models.Session,
         payload.session_id,
@@ -97,7 +102,8 @@ async def create_match(payload: schemas.MatchWithStatsCreate, db: AsyncSession =
 async def update_match(
     match_id: int,
     payload: schemas.MatchWithStatsCreate,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.SessionMatchRead:
     match = await db.get(
         models.Match,
@@ -194,7 +200,12 @@ async def get_match_for_session(session_id: int, db: AsyncSession = Depends(get_
 
 
 @router.post("/matches/{match_id}/complete", response_model=schemas.SessionMatchRead)
-async def complete_match(match_id: int, payload: MatchCompletionPayload, db: AsyncSession = Depends(get_db)) -> schemas.SessionMatchRead:
+async def complete_match(
+    match_id: int,
+    payload: MatchCompletionPayload,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> schemas.SessionMatchRead:
     match = await db.get(
         models.Match,
         match_id,

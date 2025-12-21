@@ -24,7 +24,17 @@ export interface User {
   username: string;
   is_active: boolean;
   is_admin: boolean;
+  is_root: boolean;
   player_id: number | null;
+}
+
+export interface PasswordChangeRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export interface GrantAdminRequest {
+  user_id: number;
 }
 
 const TOKEN_STORAGE_KEY = "calcio_access_token";
@@ -86,5 +96,18 @@ export async function refreshAccessToken(): Promise<TokenResponse> {
   const { access_token, refresh_token } = response.data;
   storeTokens(access_token, refresh_token);
   return response.data;
+}
+
+export async function changePassword(request: PasswordChangeRequest): Promise<void> {
+  await client.post("/auth/change-password", request);
+}
+
+export async function getUsers(): Promise<User[]> {
+  const { data } = await client.get<User[]>("/auth/users");
+  return data;
+}
+
+export async function grantAdminRole(request: GrantAdminRequest): Promise<void> {
+  await client.post("/auth/grant-admin", request);
 }
 

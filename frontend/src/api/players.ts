@@ -24,6 +24,11 @@ export async function getPlayers(): Promise<Player[]> {
   return data;
 }
 
+export async function getPlayer(id: number): Promise<Player> {
+  const { data } = await client.get<Player>(`/players/${id}`);
+  return data;
+}
+
 export async function createPlayer(payload: PlayerCreate): Promise<Player> {
   const { data } = await client.post<Player>("/players", payload);
   return data;

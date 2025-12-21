@@ -11,7 +11,8 @@ const defaultDateValue = () => new Date().toISOString().slice(0, 16); // yyyy-MM
 export default function SessionsPage() {
   const { t } = useTranslation();
   const { formatDate } = useDateFormat();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isAdmin = user?.is_admin || user?.is_root;
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
@@ -84,7 +85,7 @@ export default function SessionsPage() {
     <div style={styles.container}>
       <h1 style={styles.heading}>{t.sessionsPage}</h1>
 
-      {isAuthenticated && (
+      {isAdmin && (
         <form onSubmit={handleSubmit} style={styles.form}>
         <label style={styles.field}>
           <span style={styles.label}>{t.dateTime}</span>

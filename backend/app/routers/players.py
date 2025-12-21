@@ -1,9 +1,12 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from .. import models, schemas
+from ..auth.dependencies import get_current_admin_user
 from ..db import get_db
 
 router = APIRouter(prefix="/players", tags=["players"])
@@ -11,7 +14,11 @@ router = APIRouter(prefix="/players", tags=["players"])
 
 @router.post("/", response_model=schemas.PlayerRead, status_code=status.HTTP_201_CREATED)
 @router.post("", response_model=schemas.PlayerRead, status_code=status.HTTP_201_CREATED, include_in_schema=False)
-async def create_player(player_in: schemas.PlayerCreate, db: AsyncSession = Depends(get_db)) -> schemas.PlayerRead:
+async def create_player(
+    player_in: schemas.PlayerCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> schemas.PlayerRead:
     player = models.Player(
         name=player_in.name,
         preferred_position=player_in.preferred_position,
@@ -57,7 +64,10 @@ async def get_player(player_id: int, db: AsyncSession = Depends(get_db)) -> sche
 
 @router.put("/{player_id}", response_model=schemas.PlayerRead)
 async def update_player(
-    player_id: int, player_in: schemas.PlayerCreate, db: AsyncSession = Depends(get_db)
+    player_id: int,
+    player_in: schemas.PlayerCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
 ) -> schemas.PlayerRead:
     result = await db.execute(
         select(models.Player)
@@ -84,7 +94,11 @@ async def update_player(
 
 
 @router.delete("/{player_id}", response_model=schemas.PlayerRead)
-async def soft_delete_player(player_id: int, db: AsyncSession = Depends(get_db)) -> schemas.PlayerRead:
+async def soft_delete_player(
+    player_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> schemas.PlayerRead:
     result = await db.execute(
         select(models.Player)
         .options(selectinload(models.Player.rating))
