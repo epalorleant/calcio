@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     team_size_default: int = 5
     team_balance_optimization_threshold: int = 14
 
+    # Authentication
+    secret_key: str = "your-secret-key-change-in-production"  # Should be in .env
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
     class Config:
         env_file = ".env"
         case_sensitive = False

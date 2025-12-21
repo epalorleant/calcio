@@ -51,6 +51,23 @@ class RecurrenceType(enum.Enum):
     MONTHLY = "MONTHLY"
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    player: Mapped["Player | None"] = relationship("Player", back_populates="user", uselist=False)
+
+
 class Player(Base):
     __tablename__ = "players"
 
@@ -58,6 +75,7 @@ class Player(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     preferred_position: Mapped[str | None] = mapped_column(String(100))
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -65,6 +83,7 @@ class Player(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
+    user: Mapped["User | None"] = relationship("User", back_populates="player")
     session_players: Mapped[list["SessionPlayer"]] = relationship(
         back_populates="player", cascade="all, delete-orphan"
     )

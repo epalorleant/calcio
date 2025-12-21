@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
+import { getStoredToken, clearTokens, refreshAccessToken } from "./auth";
 
 const client = axios.create({
   // Prefer runtime config (injected via config.js), then build-time env, then same-origin root.
@@ -13,13 +14,49 @@ const client = axios.create({
   },
 });
 
+// Request interceptor: Add JWT token to requests
+client.interceptors.request.use(
+  (config) => {
+    const token = getStoredToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor: Handle 401 errors and token refresh
 client.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any;
+
+    // If 401 and we haven't already retried
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        await refreshAccessToken();
+        // Retry the original request with new token
+        const token = getStoredToken();
+        if (token) {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+        }
+        return client(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, clear tokens and redirect to login
+        clearTokens();
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
+
     // Basic logging to help during development.
     console.error("API error:", error);
     return Promise.reject(error);
-  },
+  }
 );
 
 export default client;

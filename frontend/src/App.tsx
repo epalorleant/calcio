@@ -1,14 +1,17 @@
 import { BrowserRouter as Router } from "react-router-dom";
 import { LanguageProvider } from "./i18n/LanguageContext";
+import { AuthProvider } from "./auth/AuthContext";
 import { AppContent } from "./AppContent";
 import "./App.css";
 
 function App() {
   return (
     <LanguageProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AuthProvider>
     </LanguageProvider>
   );
 }
