@@ -33,8 +33,8 @@ import { useAuth } from "../auth/AuthContext";
 export default function SessionDetailPage() {
   const { t } = useTranslation();
   const { formatDate } = useDateFormat();
-  const { isAuthenticated, user } = useAuth();
-  const isAdmin = user?.is_admin || user?.is_root;
+  const { user } = useAuth();
+  const isAdmin = !!(user?.is_admin || user?.is_root);
   const { id } = useParams<{ id: string }>();
   const sessionId = Number(id);
 
