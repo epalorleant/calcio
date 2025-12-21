@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -42,7 +43,10 @@ async def list_players(
     active: bool | None = Query(default=None, description="Filter by active status"),
     db: AsyncSession = Depends(get_db),
 ) -> list[schemas.PlayerRead]:
-    stmt = select(models.Player).options(selectinload(models.Player.rating))
+    # Exclude deleted players by default
+    stmt = select(models.Player).options(selectinload(models.Player.rating)).where(
+        models.Player.deleted_at.is_(None)
+    )
     if active is not None:
         stmt = stmt.where(models.Player.active == active)
     result = await db.execute(stmt)
@@ -54,7 +58,7 @@ async def get_player(player_id: int, db: AsyncSession = Depends(get_db)) -> sche
     result = await db.execute(
         select(models.Player)
         .options(selectinload(models.Player.rating))
-        .where(models.Player.id == player_id)
+        .where(models.Player.id == player_id, models.Player.deleted_at.is_(None))
     )
     player = result.scalars().first()
     if not player:
@@ -81,11 +85,11 @@ async def get_player_profile(
                 detail="You can only view your own profile",
             )
 
-    # Get player
+    # Get player (exclude deleted players)
     result = await db.execute(
         select(models.Player)
         .options(selectinload(models.Player.rating))
-        .where(models.Player.id == player_id)
+        .where(models.Player.id == player_id, models.Player.deleted_at.is_(None))
     )
     player = result.scalars().first()
     if not player:
@@ -165,7 +169,7 @@ async def update_player(
     result = await db.execute(
         select(models.Player)
         .options(selectinload(models.Player.rating))
-        .where(models.Player.id == player_id)
+        .where(models.Player.id == player_id, models.Player.deleted_at.is_(None))
     )
     player = result.scalars().first()
     if not player:
@@ -195,13 +199,14 @@ async def soft_delete_player(
     result = await db.execute(
         select(models.Player)
         .options(selectinload(models.Player.rating))
-        .where(models.Player.id == player_id)
+        .where(models.Player.id == player_id, models.Player.deleted_at.is_(None))
     )
     player = result.scalars().first()
     if not player:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
 
-    player.active = False
+    # Mark as deleted (soft delete)
+    player.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     # Reload player with rating relationship to avoid lazy loading issues
     result = await db.execute(

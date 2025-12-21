@@ -19,8 +19,9 @@ export type PlayerCreate = {
   active?: boolean;
 };
 
-export async function getPlayers(): Promise<Player[]> {
-  const { data } = await client.get<Player[]>("/players");
+export async function getPlayers(active?: boolean): Promise<Player[]> {
+  const params = active !== undefined ? { active } : {};
+  const { data } = await client.get<Player[]>("/players", { params });
   return data;
 }
 

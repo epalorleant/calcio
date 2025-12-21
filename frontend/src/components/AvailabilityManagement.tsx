@@ -31,14 +31,17 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   const { t } = useTranslation();
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
 
-  // Include all players, but mark assigned ones differently
+  // Include only active players (inactive players cannot be selected for matches)
+  // but mark assigned ones differently
   const playerOptions = useMemo(
     () =>
-      players.map((p) => ({
-        value: p.id,
-        label: assignedPlayerIds.has(p.id) ? `${p.name} (${t.alreadyAssigned})` : p.name,
-        isAssigned: assignedPlayerIds.has(p.id),
-      })),
+      players
+        .filter((p) => p.active) // Only show active players for match selection
+        .map((p) => ({
+          value: p.id,
+          label: assignedPlayerIds.has(p.id) ? `${p.name} (${t.alreadyAssigned})` : p.name,
+          isAssigned: assignedPlayerIds.has(p.id),
+        })),
     [players, assignedPlayerIds, t],
   );
 

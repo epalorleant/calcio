@@ -24,6 +24,7 @@ export default function PlayersPage() {
     try {
       setLoading(true);
       setError(null);
+      // Fetch all players (active and inactive, but not deleted - deleted players are excluded by backend)
       const data = await getPlayers();
       if (!Array.isArray(data)) {
         console.error("Unexpected players payload", data);
