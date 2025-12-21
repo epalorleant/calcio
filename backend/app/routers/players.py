@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from .. import models, schemas
 from ..auth.dependencies import get_current_active_user, get_current_admin_user
 from ..db import get_db
+from ..services.ratings import BASE_RATING
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -26,7 +27,16 @@ async def create_player(
         active=player_in.active,
     )
     db.add(player)
+    await db.flush()  # Flush to get the player ID
+    
+    # Create default rating for the new player
+    rating = models.PlayerRating(
+        player_id=player.id,
+        overall_rating=BASE_RATING,
+    )
+    db.add(rating)
     await db.commit()
+    
     # Reload player with rating relationship to avoid lazy loading issues
     result = await db.execute(
         select(models.Player)

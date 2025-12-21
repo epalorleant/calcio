@@ -104,50 +104,109 @@ export default function PlayerProfilePage() {
 
       {/* Player Information */}
       <div style={commonStyles.card}>
-        <h2 style={{ ...commonStyles.heading, fontSize: "1.25rem", marginBottom: "1rem" }}>
+        <h2 style={{ ...commonStyles.subheading, fontSize: "1.25rem", marginBottom: "1rem" }}>
           {t.playerInformation || "Player Information"}
         </h2>
         <div style={{ display: "grid", gap: "1rem" }}>
           <div>
-            <label style={commonStyles.label}>{t.playerName}</label>
-            <div style={{ ...commonStyles.input, backgroundColor: "#1e293b", border: "none" }}>
+            <label style={{ ...commonStyles.label, marginBottom: "0.5rem", display: "block" }}>
+              {t.playerName}
+            </label>
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "6px",
+                color: "#1e293b",
+                fontSize: "1rem",
+                fontWeight: "500",
+              }}
+            >
               {player.name}
             </div>
           </div>
 
-          {player.preferred_position && (
-            <div>
-              <label style={commonStyles.label}>{t.preferredPosition}</label>
-              <div style={{ ...commonStyles.input, backgroundColor: "#1e293b", border: "none" }}>
-                {player.preferred_position}
-              </div>
+          <div>
+            <label style={{ ...commonStyles.label, marginBottom: "0.5rem", display: "block" }}>
+              {t.preferredPosition}
+            </label>
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "6px",
+                color: "#1e293b",
+                fontSize: "1rem",
+              }}
+            >
+              {player.preferred_position || "—"}
             </div>
-          )}
+          </div>
 
           <div>
-            <label style={commonStyles.label}>{t.status}</label>
-            <div style={{ ...commonStyles.input, backgroundColor: "#1e293b", border: "none" }}>
+            <label style={{ ...commonStyles.label, marginBottom: "0.5rem", display: "block" }}>
+              {t.status}
+            </label>
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "6px",
+                color: "#1e293b",
+                fontSize: "1rem",
+              }}
+            >
               {player.active ? t.active : t.inactive}
             </div>
           </div>
 
-          {player.rating && (
-            <div>
-              <label style={commonStyles.label}>{t.overallRating}</label>
-              <div style={{ ...commonStyles.input, backgroundColor: "#1e293b", border: "none" }}>
-                {player.rating.overall_rating.toFixed(0)}
-                {player.rating.last_updated_at && (
-                  <span style={{ fontSize: "0.85rem", color: "#94a3b8", marginLeft: "0.5rem" }}>
-                    ({t.lastUpdated}: {formatDate(player.rating.last_updated_at)})
-                  </span>
-                )}
-              </div>
+          <div>
+            <label style={{ ...commonStyles.label, marginBottom: "0.5rem", display: "block" }}>
+              {t.overallRating}
+            </label>
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "6px",
+                color: "#1e293b",
+                fontSize: "1rem",
+                fontWeight: "600",
+              }}
+            >
+              {player.rating ? (
+                <>
+                  {player.rating.overall_rating.toFixed(1)}
+                  {player.rating.last_updated_at && (
+                    <span style={{ fontSize: "0.875rem", color: "#64748b", marginLeft: "0.5rem", fontWeight: "normal" }}>
+                      ({t.lastUpdated}: {formatDate(player.rating.last_updated_at)})
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span style={{ color: "#94a3b8" }}>—</span>
+              )}
             </div>
-          )}
+          </div>
 
           <div>
-            <label style={commonStyles.label}>{t.createdAt}</label>
-            <div style={{ ...commonStyles.input, backgroundColor: "#1e293b", border: "none" }}>
+            <label style={{ ...commonStyles.label, marginBottom: "0.5rem", display: "block" }}>
+              {t.createdAt}
+            </label>
+            <div
+              style={{
+                padding: "0.75rem",
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "6px",
+                color: "#1e293b",
+                fontSize: "1rem",
+              }}
+            >
               {formatDate(player.created_at)}
             </div>
           </div>
@@ -156,55 +215,61 @@ export default function PlayerProfilePage() {
 
       {/* Statistics Summary */}
       <div style={{ ...commonStyles.card, marginTop: "1.5rem" }}>
-        <h2 style={{ ...commonStyles.heading, fontSize: "1.25rem", marginBottom: "1rem" }}>
-          {t.statistics || "Statistics"}
+        <h2 style={{ ...commonStyles.subheading, fontSize: "1.25rem", marginBottom: "1rem" }}>
+          {t.statistics}
         </h2>
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: "1rem",
+            gap: "1.5rem",
           }}
         >
           <div>
-            <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
-              {t.totalMatches || "Total Matches"}
+            <div style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem", fontWeight: "500" }}>
+              {t.totalMatches}
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{stats_summary.total_matches}</div>
+            <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#1e293b" }}>
+              {stats_summary.total_matches}
+            </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
-              {t.totalGoals || "Total Goals"}
+            <div style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem", fontWeight: "500" }}>
+              {t.totalGoals}
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{stats_summary.total_goals}</div>
+            <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#1e293b" }}>
+              {stats_summary.total_goals}
+            </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
-              {t.totalAssists || "Total Assists"}
+            <div style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem", fontWeight: "500" }}>
+              {t.totalAssists}
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{stats_summary.total_assists}</div>
+            <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#1e293b" }}>
+              {stats_summary.total_assists}
+            </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
-              {t.totalMinutes || "Total Minutes"}
+            <div style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem", fontWeight: "500" }}>
+              {t.totalMinutes}
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+            <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#1e293b" }}>
               {stats_summary.total_minutes_played}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
-              {t.avgGoalsPerMatch || "Avg Goals/Match"}
+            <div style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem", fontWeight: "500" }}>
+              {t.avgGoalsPerMatch}
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+            <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#1e293b" }}>
               {stats_summary.average_goals_per_match.toFixed(2)}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
-              {t.avgAssistsPerMatch || "Avg Assists/Match"}
+            <div style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "0.5rem", fontWeight: "500" }}>
+              {t.avgAssistsPerMatch}
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+            <div style={{ fontSize: "2rem", fontWeight: "bold", color: "#1e293b" }}>
               {stats_summary.average_assists_per_match.toFixed(2)}
             </div>
           </div>
