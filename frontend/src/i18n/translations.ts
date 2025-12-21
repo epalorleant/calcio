@@ -198,6 +198,7 @@ export const translations = {
     success: "Succès",
     actions: "Actions",
     back: "Retour",
+    readOnlyMode: "Mode lecture seule. Veuillez vous connecter pour effectuer des modifications.",
     
     // Authentication
     login: "Connexion",

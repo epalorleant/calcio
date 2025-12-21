@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
 import { createPlayer, deletePlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
 import { useTranslation } from "../i18n/useTranslation";
+import { useAuth } from "../auth/AuthContext";
 
 export default function PlayersPage() {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +94,8 @@ export default function PlayersPage() {
     <div style={styles.container}>
       <h1 style={styles.heading}>{t.playersPage}</h1>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
+      {isAuthenticated && (
+        <form onSubmit={handleSubmit} style={styles.form}>
         <input
             style={styles.input}
             type="text"
@@ -117,6 +120,13 @@ export default function PlayersPage() {
         </label>
         <button style={styles.button} type="submit">{t.addPlayer}</button>
       </form>
+      )}
+
+      {!isAuthenticated && (
+        <p style={{ color: "#6b7280", fontStyle: "italic", marginBottom: "1rem" }}>
+          {t.readOnlyMode || "Read-only mode. Please log in to make changes."}
+        </p>
+      )}
 
       {loading && <p>{t.loadingPlayers}</p>}
       {error && <p style={styles.error}>{error}</p>}
@@ -131,7 +141,7 @@ export default function PlayersPage() {
               <th style={styles.th}>{t.preferredPosition}</th>
               <th style={styles.th}>Note</th>
               <th style={styles.th}>{t.active}</th>
-              <th style={styles.th}>{t.actions}</th>
+              {isAuthenticated && <th style={styles.th}>{t.actions}</th>}
             </tr>
           </thead>
           <tbody>
@@ -143,17 +153,19 @@ export default function PlayersPage() {
                   {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
                 </td>
                 <td style={styles.td}>{player.active ? t.yes : t.no}</td>
-                <td style={styles.td}>
-                  <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
-                    {player.active ? t.deactivate : t.activate}
-                  </button>
-                  <button
-                    style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
-                    onClick={() => void handleDelete(player)}
-                  >
-                    {t.delete}
-                  </button>
-                </td>
+                {isAuthenticated && (
+                  <td style={styles.td}>
+                    <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
+                      {player.active ? t.deactivate : t.activate}
+                    </button>
+                    <button
+                      style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
+                      onClick={() => void handleDelete(player)}
+                    >
+                      {t.delete}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

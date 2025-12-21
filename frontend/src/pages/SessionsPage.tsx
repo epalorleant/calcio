@@ -4,12 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { createSession, deleteSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
 import { useTranslation } from "../i18n/useTranslation";
 import { useDateFormat } from "../hooks/useDateFormat";
+import { useAuth } from "../auth/AuthContext";
 
 const defaultDateValue = () => new Date().toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
 
 export default function SessionsPage() {
   const { t } = useTranslation();
   const { formatDate } = useDateFormat();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
@@ -120,6 +122,13 @@ export default function SessionsPage() {
           {t.createSession}
         </button>
       </form>
+      )}
+
+      {!isAuthenticated && (
+        <p style={{ color: "#6b7280", fontStyle: "italic", marginBottom: "1rem" }}>
+          {t.readOnlyMode || "Read-only mode. Please log in to make changes."}
+        </p>
+      )}
 
       {loading && <p>{t.loadingSessions}</p>}
       {error && <p style={styles.error}>{error}</p>}
@@ -132,7 +141,7 @@ export default function SessionsPage() {
               <th style={styles.th}>{t.date}</th>
               <th style={styles.th}>{t.location}</th>
               <th style={styles.th}>{t.status}</th>
-              <th style={styles.th}>{t.actions}</th>
+              {isAuthenticated && <th style={styles.th}>{t.actions}</th>}
             </tr>
           </thead>
           <tbody>
@@ -141,20 +150,31 @@ export default function SessionsPage() {
                 <td style={styles.td}>{formatDate(session.date)}</td>
                 <td style={styles.td}>{session.location}</td>
                 <td style={styles.td}>{session.status === "PLANNED" ? t.planned : session.status === "COMPLETED" ? t.completed : t.cancelled}</td>
-                <td style={styles.td}>
-                  <button
-                    style={styles.linkButton}
-                    onClick={() => navigate(`/sessions/${session.id}`)}
-                  >
-                    {t.viewDetails}
-                  </button>
-                  <button
-                    style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
-                    onClick={() => void handleDelete(session.id)}
-                  >
-                    {t.delete}
-                  </button>
-                </td>
+                {isAuthenticated ? (
+                  <td style={styles.td}>
+                    <button
+                      style={styles.linkButton}
+                      onClick={() => navigate(`/sessions/${session.id}`)}
+                    >
+                      {t.viewDetails}
+                    </button>
+                    <button
+                      style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
+                      onClick={() => void handleDelete(session.id)}
+                    >
+                      {t.delete}
+                    </button>
+                  </td>
+                ) : (
+                  <td style={styles.td}>
+                    <button
+                      style={styles.linkButton}
+                      onClick={() => navigate(`/sessions/${session.id}`)}
+                    >
+                      {t.viewDetails}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
