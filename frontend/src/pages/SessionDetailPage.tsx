@@ -8,10 +8,12 @@ import {
   getAvailability,
   getSession,
   setAvailabilityBatch,
+  updatePlayerTeam,
   type Availability,
   type BalancedTeamsResponse,
   type Session,
   type SessionPlayer,
+  type SessionTeam,
 } from "../api/sessions";
 import {
   createMatch,
@@ -364,6 +366,26 @@ export default function SessionDetailPage() {
     }
   };
 
+  const handlePlayerTeamChange = async (playerId: number, newTeam: SessionTeam | null) => {
+    if (!sessionId) return;
+    try {
+      setError(null);
+      await updatePlayerTeam(sessionId, { player_id: playerId, team: newTeam });
+      // Reload availability to get updated team assignments
+      const availabilityRes = await fetchAvailability(sessionId);
+      setAvailabilityList(availabilityRes);
+      // Clear balanced state so it recalculates from availability
+      setBalanced(null);
+    } catch (err) {
+      console.error(err);
+      if (isAxiosError(err) && err.response?.data?.detail) {
+        setError(String(err.response.data.detail));
+      } else {
+        setError(t.failedToUpdateTeam || "Failed to update player team");
+      }
+    }
+  };
+
   if (!sessionId) {
     return <p>{t.invalidSession}</p>;
   }
@@ -406,6 +428,8 @@ export default function SessionDetailPage() {
         canGenerateTeams={canGenerateTeams}
         onGenerate={handleGenerate}
         isAuthenticated={isAdmin}
+        isAdmin={isAdmin}
+        onPlayerTeamChange={isAdmin ? handlePlayerTeamChange : undefined}
       />
 
       <MatchResultSection

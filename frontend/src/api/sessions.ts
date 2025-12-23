@@ -92,6 +92,18 @@ export async function generateBalancedTeams(sessionId: number): Promise<Balanced
   return data;
 }
 
+export interface UpdatePlayerTeamPayload {
+  player_id: number;
+  team: SessionTeam | null;
+}
+
+export async function updatePlayerTeam(
+  sessionId: number,
+  payload: UpdatePlayerTeamPayload,
+): Promise<void> {
+  await client.put(`/sessions/${sessionId}/player-team`, payload);
+}
+
 export async function deleteSession(id: number): Promise<void> {
   await client.delete<void>(`/sessions/${id}`);
 }

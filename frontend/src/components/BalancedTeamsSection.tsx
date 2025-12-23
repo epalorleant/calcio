@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { BalancedTeamsResponse } from "../api/sessions";
+import type { BalancedTeamsResponse, SessionTeam } from "../api/sessions";
 import { TeamCard } from "./TeamCard";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
@@ -10,6 +10,8 @@ interface BalancedTeamsSectionProps {
   canGenerateTeams: boolean;
   onGenerate: () => Promise<void>;
   isAuthenticated: boolean;
+  isAdmin?: boolean;
+  onPlayerTeamChange?: (playerId: number, newTeam: SessionTeam | null) => Promise<void>;
 }
 
 export const BalancedTeamsSection = memo(function BalancedTeamsSection({
@@ -18,8 +20,12 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
   canGenerateTeams,
   onGenerate,
   isAuthenticated,
+  isAdmin = false,
+  onPlayerTeamChange,
 }: BalancedTeamsSectionProps) {
   const { t } = useTranslation();
+  const canDragAndDrop = isAdmin && balanced !== null && onPlayerTeamChange !== undefined;
+
   return (
     <section style={commonStyles.section}>
       <div style={commonStyles.sectionHeader}>
@@ -41,11 +47,37 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
           </button>
         )}
       </div>
+      {canDragAndDrop && (
+        <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontSize: "0.875rem" }}>
+          {t.dragAndDropHint || "Drag players between teams to reorganize"}
+        </p>
+      )}
       {balanced ? (
         <div style={commonStyles.teamsGrid}>
-          <TeamCard title={t.teamA} players={balanced.team_a} />
-          <TeamCard title={t.teamB} players={balanced.team_b} />
-          <TeamCard title={t.bench} players={balanced.bench} />
+          <TeamCard
+            title={t.teamA}
+            players={balanced.team_a}
+            teamType="A"
+            onPlayerDrop={onPlayerTeamChange}
+            isDraggable={canDragAndDrop}
+            isDropTarget={canDragAndDrop}
+          />
+          <TeamCard
+            title={t.teamB}
+            players={balanced.team_b}
+            teamType="B"
+            onPlayerDrop={onPlayerTeamChange}
+            isDraggable={canDragAndDrop}
+            isDropTarget={canDragAndDrop}
+          />
+          <TeamCard
+            title={t.bench}
+            players={balanced.bench}
+            teamType="BENCH"
+            onPlayerDrop={onPlayerTeamChange}
+            isDraggable={canDragAndDrop}
+            isDropTarget={canDragAndDrop}
+          />
         </div>
       ) : (
         <p>{t.noTeamAssignments}</p>

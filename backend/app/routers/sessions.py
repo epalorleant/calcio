@@ -220,6 +220,40 @@ class BalancedTeamsResponse(BaseModel):
     balance_score: float
 
 
+class UpdatePlayerTeamRequest(BaseModel):
+    player_id: int
+    team: models.SessionTeam | None
+
+
+@router.put("/{session_id}/player-team", status_code=status.HTTP_204_NO_CONTENT)
+async def update_player_team(
+    session_id: int,
+    payload: UpdatePlayerTeamRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[models.User, Depends(get_current_admin_user)],
+) -> None:
+    """Update a player's team assignment. Only admin users can perform this action."""
+    session = await db.get(models.Session, session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    result = await db.execute(
+        select(models.SessionPlayer).where(
+            models.SessionPlayer.session_id == session_id,
+            models.SessionPlayer.player_id == payload.player_id,
+        )
+    )
+    session_player = result.scalars().first()
+    if not session_player:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found in this session",
+        )
+
+    session_player.team = payload.team
+    await db.commit()
+
+
 @router.post("/{session_id}/balanced-teams", response_model=BalancedTeamsResponse)
 async def generate_balanced_session_teams(
     session_id: int,
