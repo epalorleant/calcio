@@ -146,7 +146,8 @@ export default function AdminManagementPage() {
           {users.length === 0 ? (
             <p>{t.noUsers}</p>
           ) : (
-            <table style={commonStyles.table}>
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={commonStyles.table}>
               <thead>
                 <tr>
                   <th style={commonStyles.th}>{t.username}</th>
@@ -270,6 +271,7 @@ export default function AdminManagementPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

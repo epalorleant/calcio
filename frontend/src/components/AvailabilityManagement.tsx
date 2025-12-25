@@ -154,8 +154,8 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
         <h3 style={commonStyles.smallHeading}>{t.currentAvailability}</h3>
         {availability.length === 0 && <p>{t.noEntriesYet}</p>}
         {availability.length > 0 && (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ ...commonStyles.table, minWidth: "600px" }}>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ ...commonStyles.table, minWidth: "600px", display: "table" }}>
               <thead>
                 <tr>
                   <th style={commonStyles.th}>{t.player}</th>

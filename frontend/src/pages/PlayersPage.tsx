@@ -138,7 +138,8 @@ export default function PlayersPage() {
       {!loading && players.length === 0 && <p>{t.noPlayers}</p>}
 
       {players.length > 0 && (
-        <table style={styles.table}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <table style={styles.table}>
           <thead>
             <tr>
               <th style={styles.th}>{t.playerName}</th>
@@ -191,6 +192,7 @@ export default function PlayersPage() {
             })}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
@@ -202,21 +204,25 @@ const styles: Record<string, CSSProperties> = {
     margin: "0 auto",
     padding: "1.5rem",
     fontFamily: "system-ui, -apple-system, sans-serif",
+    width: "100%",
   },
   heading: {
     marginBottom: "1rem",
   },
   form: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr auto auto",
-    gap: "0.5rem",
-    alignItems: "center",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: "0.75rem",
+    alignItems: "end",
     marginBottom: "1rem",
   },
   input: {
-    padding: "0.5rem",
+    padding: "0.75rem 0.5rem",
     border: "1px solid #ccc",
     borderRadius: "4px",
+    fontSize: "16px", // Prevent zoom on iOS
+    minHeight: "44px", // Touch target size
+    width: "100%",
   },
   checkboxRow: {
     display: "flex",
@@ -227,12 +233,15 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "0.95rem",
   },
   button: {
-    padding: "0.55rem 0.9rem",
+    padding: "0.75rem 1rem",
     backgroundColor: "#2563eb",
     color: "#fff",
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
+    minHeight: "44px", // Touch target size
+    fontSize: "1rem",
+    touchAction: "manipulation",
   },
   error: {
     color: "#b91c1c",
@@ -240,6 +249,9 @@ const styles: Record<string, CSSProperties> = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
+    display: "block",
+    overflowX: "auto",
+    whiteSpace: "nowrap",
   },
   th: {
     textAlign: "left",

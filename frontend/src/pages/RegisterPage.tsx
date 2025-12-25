@@ -46,8 +46,21 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#0f172a" }}>
-      <div style={{ width: "100%", maxWidth: "400px", padding: "2rem", backgroundColor: "#1e293b", borderRadius: "8px" }}>
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh", 
+      backgroundColor: "#0f172a",
+      padding: "1rem",
+    }}>
+      <div style={{ 
+        width: "100%", 
+        maxWidth: "400px", 
+        padding: "2rem", 
+        backgroundColor: "#1e293b", 
+        borderRadius: "8px",
+      }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#e2e8f0", marginBottom: "1.5rem", textAlign: "center" }}>
           {t.register || "Register"}
         </h1>

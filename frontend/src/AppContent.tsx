@@ -22,7 +22,14 @@ export function AppContent() {
     <div className="layout">
       <header className="topbar">
         <div className="brand">Calcio</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1, justifyContent: "flex-end" }}>
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: "0.75rem", 
+          flex: 1, 
+          justifyContent: "flex-end",
+          flexWrap: "wrap",
+        }}>
             <nav className="nav">
               <Link to="/players" reloadDocument>{t.players}</Link>
               <Link to="/sessions" reloadDocument>{t.sessions}</Link>
@@ -30,20 +37,24 @@ export function AppContent() {
             </nav>
           {isAuthenticated ? (
             <>
-              <div style={{ color: "#cbd5e1", fontSize: "0.9rem" }}>
+              <div style={{ color: "#cbd5e1", fontSize: "0.9rem", whiteSpace: "nowrap" }}>
                 {user?.username}
               </div>
               {user?.player_id && (
                 <Link
                   to={`/players/${user.player_id}`}
                   style={{
-                    padding: "0.4rem 0.8rem",
+                    padding: "0.5rem 0.75rem",
                     backgroundColor: "transparent",
                     color: "#cbd5e1",
                     border: "1px solid #475569",
                     borderRadius: "4px",
                     textDecoration: "none",
-                    fontSize: "0.9rem",
+                    fontSize: "0.875rem",
+                    whiteSpace: "nowrap",
+                    minHeight: "36px",
+                    display: "inline-flex",
+                    alignItems: "center",
                   }}
                 >
                   {t.playerProfile}
@@ -52,13 +63,17 @@ export function AppContent() {
               <Link
                 to="/change-password"
                 style={{
-                  padding: "0.4rem 0.8rem",
+                  padding: "0.5rem 0.75rem",
                   backgroundColor: "transparent",
                   color: "#cbd5e1",
                   border: "1px solid #475569",
                   borderRadius: "4px",
                   textDecoration: "none",
-                  fontSize: "0.9rem",
+                  fontSize: "0.875rem",
+                  whiteSpace: "nowrap",
+                  minHeight: "36px",
+                  display: "inline-flex",
+                  alignItems: "center",
                 }}
               >
                 {t.changePassword}
@@ -67,13 +82,17 @@ export function AppContent() {
                 <Link
                   to="/admin-management"
                   style={{
-                    padding: "0.4rem 0.8rem",
+                    padding: "0.5rem 0.75rem",
                     backgroundColor: "transparent",
                     color: "#cbd5e1",
                     border: "1px solid #475569",
                     borderRadius: "4px",
                     textDecoration: "none",
-                    fontSize: "0.9rem",
+                    fontSize: "0.875rem",
+                    whiteSpace: "nowrap",
+                    minHeight: "36px",
+                    display: "inline-flex",
+                    alignItems: "center",
                   }}
                 >
                   {t.adminManagement}
@@ -82,13 +101,15 @@ export function AppContent() {
               <button
                 onClick={logout}
                 style={{
-                  padding: "0.4rem 0.8rem",
+                  padding: "0.5rem 0.75rem",
                   backgroundColor: "transparent",
                   color: "#cbd5e1",
                   border: "1px solid #475569",
                   borderRadius: "4px",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
+                  fontSize: "0.875rem",
+                  whiteSpace: "nowrap",
+                  minHeight: "36px",
                 }}
               >
                 {t.logout}
@@ -105,13 +126,15 @@ export function AppContent() {
                 window.location.href = "/login";
               }}
               style={{
-                padding: "0.4rem 0.8rem",
+                padding: "0.5rem 0.75rem",
                 backgroundColor: "transparent",
                 color: "#cbd5e1",
                 border: "1px solid #475569",
                 borderRadius: "4px",
                 cursor: "pointer",
-                fontSize: "0.9rem",
+                fontSize: "0.875rem",
+                whiteSpace: "nowrap",
+                minHeight: "36px",
               }}
             >
               {t.login}

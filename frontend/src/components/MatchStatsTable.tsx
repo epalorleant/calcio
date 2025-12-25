@@ -48,7 +48,7 @@ export const MatchStatsTable = memo(function MatchStatsTable({
                       <input
                         type="number"
                         min={0}
-                        style={commonStyles.input}
+                        style={{ ...commonStyles.input, width: "80px", maxWidth: "100%" }}
                         value={stats.goals}
                         onChange={(e) => onStatChange(entry.player_id, "goals", Number(e.target.value))}
                       />
@@ -61,7 +61,7 @@ export const MatchStatsTable = memo(function MatchStatsTable({
                       <input
                         type="number"
                         min={0}
-                        style={commonStyles.input}
+                        style={{ ...commonStyles.input, width: "80px", maxWidth: "100%" }}
                         value={stats.assists}
                         onChange={(e) => onStatChange(entry.player_id, "assists", Number(e.target.value))}
                       />
@@ -74,7 +74,7 @@ export const MatchStatsTable = memo(function MatchStatsTable({
                       <input
                         type="number"
                         min={0}
-                        style={commonStyles.input}
+                        style={{ ...commonStyles.input, width: "80px", maxWidth: "100%" }}
                         value={stats.minutes_played}
                         onChange={(e) => onStatChange(entry.player_id, "minutes_played", Number(e.target.value))}
                       />

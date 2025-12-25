@@ -137,7 +137,8 @@ export default function SessionsPage() {
       {!loading && sessions.length === 0 && <p>{t.noSessions}</p>}
 
       {sessions.length > 0 && (
-        <table style={styles.table}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <table style={styles.table}>
           <thead>
             <tr>
               <th style={styles.th}>{t.date}</th>
@@ -181,6 +182,7 @@ export default function SessionsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
@@ -192,6 +194,7 @@ const styles: Record<string, CSSProperties> = {
     margin: "0 auto",
     padding: "1.5rem",
     fontFamily: "system-ui, -apple-system, sans-serif",
+    width: "100%",
   },
   heading: {
     marginBottom: "1rem",
@@ -213,18 +216,24 @@ const styles: Record<string, CSSProperties> = {
     color: "#374151",
   },
   input: {
-    padding: "0.5rem",
+    padding: "0.75rem 0.5rem",
     border: "1px solid #d1d5db",
     borderRadius: "4px",
+    fontSize: "16px", // Prevent zoom on iOS
+    minHeight: "44px", // Touch target size
+    width: "100%",
   },
   button: {
-    padding: "0.6rem 1rem",
+    padding: "0.75rem 1rem",
     backgroundColor: "#2563eb",
     color: "#fff",
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
     justifySelf: "start",
+    minHeight: "44px", // Touch target size
+    fontSize: "1rem",
+    touchAction: "manipulation",
   },
   error: {
     color: "#b91c1c",
@@ -233,6 +242,9 @@ const styles: Record<string, CSSProperties> = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
+    display: "block",
+    overflowX: "auto",
+    whiteSpace: "nowrap",
   },
   th: {
     textAlign: "left",

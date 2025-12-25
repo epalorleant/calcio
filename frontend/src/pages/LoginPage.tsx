@@ -32,8 +32,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#0f172a" }}>
-      <div style={{ width: "100%", maxWidth: "400px", padding: "2rem", backgroundColor: "#1e293b", borderRadius: "8px" }}>
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh", 
+      backgroundColor: "#0f172a",
+      padding: "1rem",
+    }}>
+      <div style={{ 
+        width: "100%", 
+        maxWidth: "400px", 
+        padding: "2rem", 
+        backgroundColor: "#1e293b", 
+        borderRadius: "8px",
+      }}>
         <h1 style={{ ...commonStyles.h1, color: "#e2e8f0", marginBottom: "1.5rem", textAlign: "center" }}>
           {t.login || "Login"}
         </h1>
