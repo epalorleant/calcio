@@ -57,7 +57,9 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
       </div>
       {canDragAndDrop && (
         <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontSize: "0.875rem" }}>
-          {t.dragAndDropHint || "Drag players between teams to reorganize"}
+          {typeof window !== "undefined" && window.innerWidth <= 768
+            ? (t.tapToMove || "Tap on a player to move them between teams")
+            : (t.dragAndDropHint || "Drag players between teams to reorganize")}
         </p>
       )}
       {balanced ? (
@@ -69,6 +71,10 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
             onPlayerDrop={onPlayerTeamChange}
             isDraggable={canDragAndDrop}
             isDropTarget={canDragAndDrop}
+            availableTeams={[
+              { type: "B", label: t.teamB },
+              { type: "BENCH", label: t.bench },
+            ]}
           />
           <TeamCard
             title={t.teamB}
@@ -77,6 +83,10 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
             onPlayerDrop={onPlayerTeamChange}
             isDraggable={canDragAndDrop}
             isDropTarget={canDragAndDrop}
+            availableTeams={[
+              { type: "A", label: t.teamA },
+              { type: "BENCH", label: t.bench },
+            ]}
           />
           <TeamCard
             title={t.bench}
@@ -85,6 +95,10 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
             onPlayerDrop={onPlayerTeamChange}
             isDraggable={canDragAndDrop}
             isDropTarget={canDragAndDrop}
+            availableTeams={[
+              { type: "A", label: t.teamA },
+              { type: "B", label: t.teamB },
+            ]}
           />
         </div>
       ) : (
