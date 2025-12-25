@@ -66,9 +66,9 @@ export const MatchResultSection = memo(function MatchResultSection({
           <input
             type="number"
             min={0}
-            style={commonStyles.input}
+            readOnly
+            style={{ ...commonStyles.input, backgroundColor: "#f3f4f6", cursor: "not-allowed" }}
             value={matchForm.scoreTeamA}
-            onChange={(e) => onMatchFormChange({ ...matchForm, scoreTeamA: Number(e.target.value) || 0 })}
           />
         </label>
         <label style={commonStyles.field}>
@@ -76,9 +76,9 @@ export const MatchResultSection = memo(function MatchResultSection({
           <input
             type="number"
             min={0}
-            style={commonStyles.input}
+            readOnly
+            style={{ ...commonStyles.input, backgroundColor: "#f3f4f6", cursor: "not-allowed" }}
             value={matchForm.scoreTeamB}
-            onChange={(e) => onMatchFormChange({ ...matchForm, scoreTeamB: Number(e.target.value) || 0 })}
           />
         </label>
         <label style={{ ...commonStyles.field, flex: 1 }}>
@@ -89,6 +89,22 @@ export const MatchResultSection = memo(function MatchResultSection({
             value={matchForm.notes}
             onChange={(e) => onMatchFormChange({ ...matchForm, notes: e.target.value })}
           />
+        </label>
+      </div>
+      )}
+      {!isAuthenticated && (
+        <div style={commonStyles.scoreRow}>
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>{t.scoreTeamA}</span>
+          <div style={{ ...commonStyles.input, backgroundColor: "#f3f4f6", padding: "0.45rem 0.5rem" }}>
+            {matchForm.scoreTeamA}
+          </div>
+        </label>
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>{t.scoreTeamB}</span>
+          <div style={{ ...commonStyles.input, backgroundColor: "#f3f4f6", padding: "0.45rem 0.5rem" }}>
+            {matchForm.scoreTeamB}
+          </div>
         </label>
       </div>
       )}

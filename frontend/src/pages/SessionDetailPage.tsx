@@ -160,6 +160,57 @@ export default function SessionDetailPage() {
   const teamBPlayers = availability.filter((entry) => entry.team === "B");
   const benchPlayers = availability.filter((entry) => entry.team !== "A" && entry.team !== "B");
 
+  // Calculate scores automatically from player goals
+  const calculatedScores = useMemo(() => {
+    let teamAGoals = 0;
+    let teamBGoals = 0;
+
+    // Count goals from team A players
+    teamAPlayers.forEach((entry) => {
+      const stats = playerStats[entry.player_id];
+      if (stats) {
+        teamAGoals += stats.goals || 0;
+      }
+    });
+
+    // Count goals from team B players
+    teamBPlayers.forEach((entry) => {
+      const stats = playerStats[entry.player_id];
+      if (stats) {
+        teamBGoals += stats.goals || 0;
+      }
+    });
+
+    // Count goals from bench players assigned to teams
+    benchPlayers.forEach((entry) => {
+      const benchTeam = benchTeams[entry.player_id];
+      const stats = playerStats[entry.player_id];
+      if (stats && benchTeam) {
+        if (benchTeam === "A") {
+          teamAGoals += stats.goals || 0;
+        } else if (benchTeam === "B") {
+          teamBGoals += stats.goals || 0;
+        }
+      }
+    });
+
+    return { scoreTeamA: teamAGoals, scoreTeamB: teamBGoals };
+  }, [teamAPlayers, teamBPlayers, benchPlayers, playerStats, benchTeams]);
+
+  // Check if match has been initiated (at least one goal assigned)
+  const matchInitiated = useMemo(() => {
+    return Object.values(playerStats).some((stats) => (stats.goals || 0) > 0);
+  }, [playerStats]);
+
+  // Update matchForm scores automatically when calculated scores change
+  useEffect(() => {
+    setMatchForm((prev) => ({
+      ...prev,
+      scoreTeamA: calculatedScores.scoreTeamA,
+      scoreTeamB: calculatedScores.scoreTeamB,
+    }));
+  }, [calculatedScores.scoreTeamA, calculatedScores.scoreTeamB]);
+
   const derivedBalanced = useMemo<BalancedTeamsResponse | null>(() => {
     if (availability.length === 0) return null;
 
@@ -283,26 +334,7 @@ export default function SessionDetailPage() {
       return;
     }
 
-    let teamAGoals = 0;
-    let teamBGoals = 0;
-    const resolveTeam = (entry: SessionPlayer): MatchTeam | null =>
-      entry.team === "A" || entry.team === "B"
-        ? sessionTeamToMatchTeam(entry.team)
-        : benchTeams[entry.player_id] ?? null;
-
-    for (const entry of participants) {
-      const resolvedTeam = resolveTeam(entry);
-      if (!resolvedTeam) continue;
-      const line = playerStats[entry.player_id];
-      const goals = line?.goals ?? 0;
-      if (resolvedTeam === "A") teamAGoals += goals;
-      if (resolvedTeam === "B") teamBGoals += goals;
-    }
-
-    if (teamAGoals !== matchForm.scoreTeamA || teamBGoals !== matchForm.scoreTeamB) {
-      setMatchError(t.scoresMustMatch);
-      return;
-    }
+    // Scores are automatically calculated from player goals, no validation needed
 
     setMatchError(null);
     setMatchSuccess(null);
@@ -420,6 +452,7 @@ export default function SessionDetailPage() {
         onSubmit={handleSubmit}
         error={error}
         isAuthenticated={isAdmin}
+        matchInitiated={matchInitiated}
       />
 
       <BalancedTeamsSection
@@ -428,8 +461,9 @@ export default function SessionDetailPage() {
         canGenerateTeams={canGenerateTeams}
         onGenerate={handleGenerate}
         isAuthenticated={isAdmin}
-        isAdmin={isAdmin}
-        onPlayerTeamChange={isAdmin ? handlePlayerTeamChange : undefined}
+        isAdmin={isAdmin && !matchInitiated}
+        onPlayerTeamChange={isAdmin && !matchInitiated ? handlePlayerTeamChange : undefined}
+        matchInitiated={matchInitiated}
       />
 
       <MatchResultSection

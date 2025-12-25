@@ -12,6 +12,7 @@ interface BalancedTeamsSectionProps {
   isAuthenticated: boolean;
   isAdmin?: boolean;
   onPlayerTeamChange?: (playerId: number, newTeam: SessionTeam | null) => Promise<void>;
+  matchInitiated?: boolean;
 }
 
 export const BalancedTeamsSection = memo(function BalancedTeamsSection({
@@ -22,9 +23,10 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
   isAuthenticated,
   isAdmin = false,
   onPlayerTeamChange,
+  matchInitiated = false,
 }: BalancedTeamsSectionProps) {
   const { t } = useTranslation();
-  const canDragAndDrop = isAdmin && balanced !== null && onPlayerTeamChange !== undefined;
+  const canDragAndDrop = isAdmin && balanced !== null && onPlayerTeamChange !== undefined && !matchInitiated;
 
   return (
     <section style={commonStyles.section}>
@@ -34,13 +36,19 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
           <button
             style={{
               ...commonStyles.button,
-              opacity: hasExistingTeams || !canGenerateTeams ? 0.6 : 1,
-              cursor: hasExistingTeams || !canGenerateTeams ? "not-allowed" : "pointer",
+              opacity: hasExistingTeams || !canGenerateTeams || matchInitiated ? 0.6 : 1,
+              cursor: hasExistingTeams || !canGenerateTeams || matchInitiated ? "not-allowed" : "pointer",
             }}
             onClick={() => void onGenerate()}
-            disabled={hasExistingTeams || !canGenerateTeams}
+            disabled={hasExistingTeams || !canGenerateTeams || matchInitiated}
             title={
-              !canGenerateTeams ? "Au moins 10 joueurs disponibles requis" : hasExistingTeams ? "Équipes déjà assignées" : undefined
+              matchInitiated
+                ? t.cannotModifyTeamsAfterMatchInitiated || "Cannot modify teams after match has been initiated"
+                : !canGenerateTeams
+                ? "Au moins 10 joueurs disponibles requis"
+                : hasExistingTeams
+                ? "Équipes déjà assignées"
+                : undefined
             }
           >
             {t.generateBalancedTeams}

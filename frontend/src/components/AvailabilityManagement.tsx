@@ -17,6 +17,7 @@ interface AvailabilityManagementProps {
   onSubmit: (e: FormEvent) => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
+  matchInitiated?: boolean;
 }
 
 export const AvailabilityManagement = memo(function AvailabilityManagement({
@@ -27,6 +28,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   onSubmit,
   error,
   isAuthenticated,
+  matchInitiated = false,
 }: AvailabilityManagementProps) {
   const { t } = useTranslation();
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
@@ -74,6 +76,11 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
         </p>
       )}
       {error && <p style={commonStyles.error}>{error}</p>}
+      {matchInitiated && (
+        <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic", color: "#dc2626" }}>
+          {t.cannotModifyTeamsAfterMatchInitiated || "Cannot modify player assignments after match has been initiated"}
+        </p>
+      )}
       {isAuthenticated && (
         <form onSubmit={onSubmit} style={commonStyles.form}>
         <label style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
@@ -88,6 +95,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
             multiple
             size={Math.min(playerOptions.length + 1, 6)}
             value={form.player_ids.map(String)}
+            disabled={matchInitiated}
             onChange={(e) => {
               const selected = Array.from(e.target.selectedOptions).map((opt) => Number(opt.value));
               onFormChange({ ...form, player_ids: selected });
@@ -117,6 +125,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
           <select
             style={commonStyles.select}
             value={form.availability}
+            disabled={matchInitiated}
             onChange={(e) => onFormChange({ ...form, availability: e.target.value as Availability })}
           >
             <option value="YES">{t.yes}</option>
@@ -129,12 +138,13 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
           <input
             type="checkbox"
             checked={form.is_goalkeeper}
+            disabled={matchInitiated}
             onChange={(e) => onFormChange({ ...form, is_goalkeeper: e.target.checked })}
           />
           <span style={commonStyles.checkboxLabel}>{t.goalkeeper}</span>
         </label>
 
-        <button style={commonStyles.button} type="submit">
+        <button style={commonStyles.button} type="submit" disabled={matchInitiated}>
           {isEditing ? t.updateAvailability : t.saveAvailability}
         </button>
       </form>
@@ -169,11 +179,14 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
                           <button
                             type="button"
                             onClick={() => handleEdit(entry)}
+                            disabled={matchInitiated}
                             style={{
                               ...commonStyles.button,
                               backgroundColor: "#6b7280",
                               padding: "0.35rem 0.6rem",
                               fontSize: "0.85rem",
+                              opacity: matchInitiated ? 0.5 : 1,
+                              cursor: matchInitiated ? "not-allowed" : "pointer",
                             }}
                           >
                             {t.edit}
