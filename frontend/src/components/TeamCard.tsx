@@ -95,11 +95,16 @@ export const TeamCard = memo(function TeamCard({
   };
 
   // Handle click/tap to show team selection menu on mobile
-  const handlePlayerClick = (e: React.MouseEvent, playerId: number) => {
+  const handlePlayerClick = (e: React.MouseEvent | React.TouchEvent, playerId: number) => {
     if (!isDraggable || !isMobile) return;
     e.preventDefault();
     e.stopPropagation();
-    setSelectedPlayerId(selectedPlayerId === playerId ? null : playerId);
+    // Only toggle if clicking on the same player, otherwise open the new one
+    if (selectedPlayerId === playerId) {
+      setSelectedPlayerId(null);
+    } else {
+      setSelectedPlayerId(playerId);
+    }
   };
 
   const handleTeamSelect = (targetTeam: SessionTeam | null) => {
@@ -108,17 +113,27 @@ export const TeamCard = memo(function TeamCard({
     setSelectedPlayerId(null);
   };
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside (but not on menu buttons)
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      // Don't close if clicking on the menu or its buttons
+      if (target && (target as Element).closest('[data-team-menu]')) {
+        return;
+      }
+      if (cardRef.current && !cardRef.current.contains(target)) {
         setSelectedPlayerId(null);
       }
     };
 
     if (selectedPlayerId && isMobile) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      // Use capture phase to catch events before they bubble
+      document.addEventListener("mousedown", handleClickOutside, true);
+      document.addEventListener("touchstart", handleClickOutside, true);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside, true);
+        document.removeEventListener("touchstart", handleClickOutside, true);
+      };
     }
   }, [selectedPlayerId, isMobile]);
 
@@ -144,102 +159,170 @@ export const TeamCard = memo(function TeamCard({
       {players.length === 0 && <p>{t.none}</p>}
       {players.length > 0 && (
         <ul style={commonStyles.list}>
-          {players.map((p) => (
-            <li
-              key={p.player_id}
-              style={{
-                ...commonStyles.listItem,
-                ...(isDraggable
-                  ? {
-                      cursor: isMobile ? "pointer" : "grab",
-                      userSelect: "none",
-                      position: "relative",
-                      padding: "0.5rem",
-                      borderRadius: "4px",
-                      backgroundColor: selectedPlayerId === p.player_id ? "#eff6ff" : "transparent",
-                    }
-                  : {}),
-              }}
-              draggable={isDraggable && !isMobile}
-              onDragStart={(e) => handleDragStart(e, p.player_id)}
-              onTouchStart={(e) => handleTouchStart(e, p.player_id)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              onClick={(e) => handlePlayerClick(e, p.player_id)}
-            >
-              <span>{p.name}</span>
-              <span style={commonStyles.muted}>
-                ({p.rating.toFixed(1)}){p.is_goalkeeper ? " GK" : ""}
-              </span>
-              {isMobile && isDraggable && selectedPlayerId === p.player_id && availableTeams && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    right: 0,
-                    marginTop: "0.25rem",
-                    backgroundColor: "#fff",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "4px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    zIndex: 1000,
-                    padding: "0.5rem",
-                  }}
-                >
-                  <div style={{ fontSize: "0.875rem", marginBottom: "0.5rem", fontWeight: "600" }}>
-                    {t.moveTo || "Move to"}:
-                  </div>
-                  {availableTeams
-                    .filter((team) => team.type !== teamType)
-                    .map((team) => (
+          {players.map((p, index) => {
+            const isLastPlayer = index === players.length - 1;
+            const isSelected = selectedPlayerId === p.player_id;
+            
+            return (
+              <li
+                key={p.player_id}
+                style={{
+                  ...commonStyles.listItem,
+                  ...(isDraggable
+                    ? {
+                        cursor: isMobile ? "pointer" : "grab",
+                        userSelect: "none",
+                        position: "relative",
+                        padding: "0.5rem",
+                        borderRadius: "4px",
+                        backgroundColor: isSelected ? "#eff6ff" : "transparent",
+                      }
+                    : {}),
+                }}
+                draggable={isDraggable && !isMobile}
+                onDragStart={(e) => handleDragStart(e, p.player_id)}
+                onTouchStart={(e) => {
+                  // On mobile, use click handler instead of drag
+                  if (isMobile && isDraggable) {
+                    handlePlayerClick(e, p.player_id);
+                  } else {
+                    handleTouchStart(e, p.player_id);
+                  }
+                }}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onClick={(e) => {
+                  if (!isMobile) {
+                    handlePlayerClick(e, p.player_id);
+                  }
+                }}
+              >
+                <span>{p.name}</span>
+                <span style={commonStyles.muted}>
+                  ({p.rating.toFixed(1)}){p.is_goalkeeper ? " GK" : ""}
+                </span>
+                {isMobile && isDraggable && isSelected && availableTeams && (
+                  <>
+                    {/* Overlay to prevent clicks on other elements */}
+                    <div
+                      style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 999,
+                        backgroundColor: "rgba(0, 0, 0, 0.1)",
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedPlayerId(null);
+                      }}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedPlayerId(null);
+                      }}
+                    />
+                    {/* Menu */}
+                    <div
+                      data-team-menu
+                      style={{
+                        position: "absolute",
+                        ...(isLastPlayer
+                          ? {
+                              bottom: "100%",
+                              left: 0,
+                              right: 0,
+                              marginBottom: "0.25rem",
+                            }
+                          : {
+                              top: "100%",
+                              left: 0,
+                              right: 0,
+                              marginTop: "0.25rem",
+                            }),
+                        backgroundColor: "#fff",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "4px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                        padding: "0.5rem",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                    >
+                      <div style={{ fontSize: "0.875rem", marginBottom: "0.5rem", fontWeight: "600" }}>
+                        {t.moveTo || "Move to"}:
+                      </div>
+                      {availableTeams
+                        .filter((team) => team.type !== teamType)
+                        .map((team) => (
+                          <button
+                            key={team.type}
+                            data-team-menu
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const targetTeam = team.type === "BENCH" ? null : (team.type as SessionTeam);
+                              handleTeamSelect(targetTeam);
+                            }}
+                            onTouchStart={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const targetTeam = team.type === "BENCH" ? null : (team.type as SessionTeam);
+                              handleTeamSelect(targetTeam);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "0.5rem",
+                              marginBottom: "0.25rem",
+                              backgroundColor: "#2563eb",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "0.875rem",
+                              textAlign: "left",
+                              touchAction: "manipulation",
+                            }}
+                          >
+                            {team.label}
+                          </button>
+                        ))}
                       <button
-                        key={team.type}
-                        onClick={(e) => {
+                        data-team-menu
+                        onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          const targetTeam = team.type === "BENCH" ? null : (team.type as SessionTeam);
-                          handleTeamSelect(targetTeam);
+                          setSelectedPlayerId(null);
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedPlayerId(null);
                         }}
                         style={{
                           width: "100%",
                           padding: "0.5rem",
-                          marginBottom: "0.25rem",
-                          backgroundColor: "#2563eb",
+                          backgroundColor: "#6b7280",
                           color: "#fff",
                           border: "none",
                           borderRadius: "4px",
                           cursor: "pointer",
                           fontSize: "0.875rem",
-                          textAlign: "left",
+                          touchAction: "manipulation",
                         }}
                       >
-                        {team.label}
+                        {t.cancel || "Cancel"}
                       </button>
-                    ))}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedPlayerId(null);
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      backgroundColor: "#6b7280",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {t.cancel || "Cancel"}
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
+                    </div>
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
