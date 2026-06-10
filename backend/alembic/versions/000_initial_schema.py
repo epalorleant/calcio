@@ -41,33 +41,11 @@ def upgrade() -> None:
         _create_enum_type("sessionteam", ["A", "B", "BENCH"])
         _create_enum_type("matchteam", ["A", "B"])
 
-        status_col = sa.Column(
-            "status",
-            sa.Enum(
-                "PLANNED",
-                "COMPLETED",
-                "CANCELLED",
-                name="sessionstatus",
-                create_type=False,
-            ),
-            nullable=False,
-            server_default="PLANNED",
-        )
-        availability_col = sa.Column(
-            "availability",
-            sa.Enum("YES", "NO", "MAYBE", name="availability", create_type=False),
-            nullable=False,
-        )
-        session_team_col = sa.Column(
-            "team",
-            sa.Enum("A", "B", "BENCH", name="sessionteam", create_type=False),
-            nullable=True,
-        )
-        match_team_col = sa.Column(
-            "team",
-            sa.Enum("A", "B", name="matchteam", create_type=False),
-            nullable=False,
-        )
+        # Use String columns first to avoid SQLAlchemy emitting CREATE TYPE
+        status_col = sa.Column("status", sa.String(length=20), nullable=False, server_default="PLANNED")
+        availability_col = sa.Column("availability", sa.String(length=20), nullable=False)
+        session_team_col = sa.Column("team", sa.String(length=20), nullable=True)
+        match_team_col = sa.Column("team", sa.String(length=20), nullable=False)
     else:
         status_col = sa.Column("status", sa.String(length=20), nullable=False, server_default="PLANNED")
         availability_col = sa.Column("availability", sa.String(length=20), nullable=False)
@@ -172,6 +150,27 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("player_id"),
     )
+
+    if is_postgres:
+        op.execute(
+            "ALTER TABLE sessions ALTER COLUMN status TYPE sessionstatus "
+            "USING status::sessionstatus"
+        )
+        op.execute(
+            "ALTER TABLE sessions ALTER COLUMN status SET DEFAULT 'PLANNED'::sessionstatus"
+        )
+        op.execute(
+            "ALTER TABLE session_players ALTER COLUMN availability TYPE availability "
+            "USING availability::availability"
+        )
+        op.execute(
+            "ALTER TABLE session_players ALTER COLUMN team TYPE sessionteam "
+            "USING team::sessionteam"
+        )
+        op.execute(
+            "ALTER TABLE player_stats ALTER COLUMN team TYPE matchteam "
+            "USING team::matchteam"
+        )
 
 
 def downgrade() -> None:
