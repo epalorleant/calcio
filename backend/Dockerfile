@@ -12,6 +12,7 @@ COPY app ./app
 # Copy Alembic configuration for migrations
 COPY alembic.ini ./
 COPY alembic ./alembic
+COPY migration_utils ./migration_utils
 
 # Copy utility scripts
 COPY scripts ./scripts
