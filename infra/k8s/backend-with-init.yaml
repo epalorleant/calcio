@@ -145,7 +145,7 @@ metadata:
 type: Opaque
 stringData:
   # Change these before deploying to production.
-  ROOT_EMAIL: admin@example.com
+  ROOT_EMAIL: admin@calcio.com
   ROOT_USERNAME: admin
-  ROOT_PASSWORD: change-me-on-deploy
+  ROOT_PASSWORD: adm1n@calc10
 
