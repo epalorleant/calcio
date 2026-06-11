@@ -33,19 +33,26 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   const { t } = useTranslation();
   const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
 
-  // Include only active players (inactive players cannot be selected for matches)
-  // but mark assigned ones differently
-  const playerOptions = useMemo(
-    () =>
-      players
-        .filter((p) => p.active) // Only show active players for match selection
-        .map((p) => ({
-          value: p.id,
-          label: assignedPlayerIds.has(p.id) ? `${p.name} (${t.alreadyAssigned})` : p.name,
-          isAssigned: assignedPlayerIds.has(p.id),
-        })),
-    [players, assignedPlayerIds, t],
+  const activePlayers = useMemo(() => players.filter((player) => player.active), [players]);
+  const unassignedPlayers = useMemo(
+    () => activePlayers.filter((player) => !assignedPlayerIds.has(player.id)),
+    [activePlayers, assignedPlayerIds],
   );
+
+  const isEditing = form.player_ids.length === 1 && assignedPlayerIds.has(form.player_ids[0]);
+  const editingPlayerName = isEditing
+    ? players.find((player) => player.id === form.player_ids[0])?.name || t.unknown
+    : null;
+
+  const togglePlayer = (playerId: number) => {
+    const selected = new Set(form.player_ids);
+    if (selected.has(playerId)) {
+      selected.delete(playerId);
+    } else {
+      selected.add(playerId);
+    }
+    onFormChange({ ...form, player_ids: Array.from(selected) });
+  };
 
   const handleEdit = (entry: SessionPlayer) => {
     onFormChange({
@@ -53,14 +60,12 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
       availability: entry.availability,
       is_goalkeeper: entry.is_goalkeeper,
     });
-    // Scroll to form
-    document.querySelector('form')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById("availability-form")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
-  const isEditing = form.player_ids.length === 1 && assignedPlayerIds.has(form.player_ids[0]);
-  const editingPlayerName = isEditing
-    ? players.find((p) => p.id === form.player_ids[0])?.name || t.unknown
-    : null;
+  const handleCancelEdit = () => {
+    onFormChange({ player_ids: [], availability: "YES", is_goalkeeper: false });
+  };
 
   return (
     <section style={commonStyles.section}>
@@ -70,11 +75,6 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
           {t.readOnlyMode}
         </p>
       )}
-      {isEditing && editingPlayerName && (
-        <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
-          {t.editingAvailabilityFor(editingPlayerName)}
-        </p>
-      )}
       {error && <p style={commonStyles.error}>{error}</p>}
       {matchInitiated && (
         <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic", color: "#dc2626" }}>
@@ -82,72 +82,101 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
         </p>
       )}
       {isAuthenticated && (
-        <form onSubmit={onSubmit} style={commonStyles.form}>
-        <label style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
-          <span style={commonStyles.label}>{t.player}</span>
-          <select
-            style={{
-              ...commonStyles.select,
-              minHeight: "120px",
-              width: "100%",
-              padding: "0.5rem",
-            }}
-            multiple
-            size={Math.min(playerOptions.length + 1, 6)}
-            value={form.player_ids.map(String)}
-            disabled={matchInitiated}
-            onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions).map((opt) => Number(opt.value));
-              onFormChange({ ...form, player_ids: selected });
-            }}
-          >
-            {playerOptions.length === 0 ? (
-              <option value="" disabled>
-                {t.allPlayersAssigned}
-              </option>
-            ) : (
-              playerOptions.map((opt) => (
-                <option key={opt.value} value={opt.value} style={opt.isAssigned ? { fontStyle: "italic" } : undefined}>
-                  {opt.label}
-                </option>
-              ))
-            )}
-          </select>
-          {form.player_ids.length > 0 && (
-            <p style={{ ...commonStyles.muted, marginTop: "0.25rem", fontSize: "0.85rem" }}>
-              {t.playersSelected(form.player_ids.length)}
-            </p>
+        <form id="availability-form" onSubmit={onSubmit} style={commonStyles.form}>
+          {isEditing ? (
+            <div style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
+              <span style={commonStyles.label}>{t.player}</span>
+              <p style={{ margin: 0, fontWeight: 600 }}>{editingPlayerName}</p>
+              <p style={{ ...commonStyles.muted, margin: "0.25rem 0 0", fontSize: "0.85rem" }}>
+                {t.editingAvailabilityFor(editingPlayerName || "")}
+              </p>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                style={{ ...commonStyles.linkButton, marginTop: "0.25rem" }}
+              >
+                {t.cancel}
+              </button>
+            </div>
+          ) : (
+            <div style={{ ...commonStyles.field, gridColumn: "1 / -1" }}>
+              <span style={commonStyles.label}>{t.selectPlayers}</span>
+              {unassignedPlayers.length === 0 ? (
+                <p style={commonStyles.muted}>{t.allPlayersAssigned}</p>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                    maxHeight: "240px",
+                    overflowY: "auto",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "4px",
+                    padding: "0.75rem",
+                    backgroundColor: "#fff",
+                  }}
+                >
+                  {unassignedPlayers.map((player) => (
+                    <label
+                      key={player.id}
+                      style={{
+                        ...commonStyles.checkboxRow,
+                        cursor: matchInitiated ? "not-allowed" : "pointer",
+                        opacity: matchInitiated ? 0.6 : 1,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.player_ids.includes(player.id)}
+                        disabled={matchInitiated}
+                        onChange={() => togglePlayer(player.id)}
+                      />
+                      <span style={commonStyles.checkboxLabel}>{player.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {form.player_ids.length > 0 && (
+                <p style={{ ...commonStyles.muted, marginTop: "0.25rem", fontSize: "0.85rem" }}>
+                  {t.playersSelected(form.player_ids.length)}
+                </p>
+              )}
+            </div>
           )}
-        </label>
 
-        <label style={commonStyles.field}>
-          <span style={commonStyles.label}>{t.availability}</span>
-          <select
-            style={commonStyles.select}
-            value={form.availability}
-            disabled={matchInitiated}
-            onChange={(e) => onFormChange({ ...form, availability: e.target.value as Availability })}
+          <label style={commonStyles.field}>
+            <span style={commonStyles.label}>{t.availability}</span>
+            <select
+              style={commonStyles.select}
+              value={form.availability}
+              disabled={matchInitiated || (!isEditing && form.player_ids.length === 0)}
+              onChange={(e) => onFormChange({ ...form, availability: e.target.value as Availability })}
+            >
+              <option value="YES">{t.yes}</option>
+              <option value="NO">{t.no}</option>
+              <option value="MAYBE">{t.maybe}</option>
+            </select>
+          </label>
+
+          <label style={commonStyles.checkboxRow}>
+            <input
+              type="checkbox"
+              checked={form.is_goalkeeper}
+              disabled={matchInitiated || (!isEditing && form.player_ids.length === 0)}
+              onChange={(e) => onFormChange({ ...form, is_goalkeeper: e.target.checked })}
+            />
+            <span style={commonStyles.checkboxLabel}>{t.goalkeeper}</span>
+          </label>
+
+          <button
+            style={commonStyles.button}
+            type="submit"
+            disabled={matchInitiated || form.player_ids.length === 0}
           >
-            <option value="YES">{t.yes}</option>
-            <option value="NO">{t.no}</option>
-            <option value="MAYBE">{t.maybe}</option>
-          </select>
-        </label>
-
-        <label style={commonStyles.checkboxRow}>
-          <input
-            type="checkbox"
-            checked={form.is_goalkeeper}
-            disabled={matchInitiated}
-            onChange={(e) => onFormChange({ ...form, is_goalkeeper: e.target.checked })}
-          />
-          <span style={commonStyles.checkboxLabel}>{t.goalkeeper}</span>
-        </label>
-
-        <button style={commonStyles.button} type="submit" disabled={matchInitiated}>
-          {isEditing ? t.updateAvailability : t.saveAvailability}
-        </button>
-      </form>
+            {isEditing ? t.updateAvailability : t.saveAvailability}
+          </button>
+        </form>
       )}
 
       <div>
@@ -167,11 +196,13 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
               </thead>
               <tbody>
                 {availability.map((entry) => {
-                  const playerName = players.find((p) => p.id === entry.player_id)?.name || entry.player_id;
+                  const playerName = players.find((player) => player.id === entry.player_id)?.name || entry.player_id;
                   return (
                     <tr key={entry.id}>
                       <td style={commonStyles.td}>{playerName}</td>
-                      <td style={commonStyles.td}>{entry.availability === "YES" ? t.yes : entry.availability === "NO" ? t.no : t.maybe}</td>
+                      <td style={commonStyles.td}>
+                        {entry.availability === "YES" ? t.yes : entry.availability === "NO" ? t.no : t.maybe}
+                      </td>
                       <td style={commonStyles.td}>{entry.team ?? "—"}</td>
                       <td style={commonStyles.td}>{entry.is_goalkeeper ? t.yes : t.no}</td>
                       {isAuthenticated && (
@@ -204,4 +235,3 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
     </section>
   );
 });
-

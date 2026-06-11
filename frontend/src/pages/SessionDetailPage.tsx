@@ -70,16 +70,6 @@ export default function SessionDetailPage() {
     is_goalkeeper: false,
   });
 
-  const assignedPlayerIds = useMemo(() => new Set(availability.map((entry) => entry.player_id)), [availability]);
-
-  useEffect(() => {
-    // Drop any selections that have since been assigned.
-    setForm((prev) => ({
-      ...prev,
-      player_ids: prev.player_ids.filter((pid) => !assignedPlayerIds.has(pid)),
-    }));
-  }, [assignedPlayerIds]);
-
   const loadData = async () => {
     if (!sessionId) {
       setError(t.invalidSession);
@@ -286,7 +276,7 @@ export default function SessionDetailPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!sessionId || form.player_ids.length === 0) {
-      setError("Select at least one player.");
+      setError(t.selectAtLeastOnePlayer);
       return;
     }
     try {
@@ -303,7 +293,7 @@ export default function SessionDetailPage() {
       setAvailabilityList(availabilityRes);
     } catch (err) {
       console.error(err);
-      setError("Failed to set availability.");
+      setError(t.failedToSetAvailability);
     }
   };
 
