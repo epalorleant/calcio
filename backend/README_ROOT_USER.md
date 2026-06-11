@@ -1,6 +1,25 @@
 # Creating the Root User Account
 
-The root user account has all privileges and can grant admin roles to other users. To create the initial root user, use the provided script.
+The root user account has all privileges and can grant admin roles to other users.
+
+## Automatic Bootstrap on Kubernetes (Recommended)
+
+The backend deployment can create the root user automatically during pod startup.
+
+1. Set credentials in `backend-bootstrap-secret` inside `infra/k8s/backend-with-init.yaml` before deploying.
+2. Deploy the backend:
+   ```bash
+   kubectl apply -f infra/k8s/backend-with-init.yaml
+   ```
+3. The `bootstrap-admin` init container runs after migrations and:
+   - creates the root user if none exists
+   - skips quietly if a root user already exists
+   - skips quietly if `ROOT_*` variables are not configured
+
+Check bootstrap logs:
+```bash
+kubectl logs deployment/backend -c bootstrap-admin -n calcio
+```
 
 ## Method 1: Using Command Line Arguments
 

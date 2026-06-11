@@ -16,9 +16,9 @@ If `DATABASE_URL` is not provided, the API will default to a local SQLite file d
 
 ## Creating the Root User
 
-Before you can use admin features, you need to create the initial root user account. See [README_ROOT_USER.md](README_ROOT_USER.md) for detailed instructions.
+On Kubernetes/OpenShift, the backend deployment can bootstrap the root user automatically via the `bootstrap-admin` init container. See [README_ROOT_USER.md](README_ROOT_USER.md) for details.
 
-Quick start:
+Manual creation:
 ```bash
 python scripts/create_root_user.py --email admin@example.com --username admin --password your_secure_password
 ```

@@ -31,12 +31,22 @@ See: `backend-with-init.yaml`
    kubectl apply -f infra/k8s/backend-with-init.yaml
    ```
 
-2. The init container will:
+2. The init containers will:
    - Convert async URL to sync for Alembic
    - Run `alembic upgrade head`
-   - Only proceed if migrations succeed
+   - Create the initial root user from `backend-bootstrap-secret` when configured
+   - Only proceed if migrations and bootstrap succeed
 
 3. The main container uses the async URL for the application
+
+### Root User Bootstrap
+
+The `bootstrap-admin` init container reads:
+- `ROOT_EMAIL`
+- `ROOT_USERNAME`
+- `ROOT_PASSWORD`
+
+from `backend-bootstrap-secret`. Update those values before production deployment. If the secret is omitted or the variables are unset, bootstrap is skipped.
 
 ### Database URL Configuration
 

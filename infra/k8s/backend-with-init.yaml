@@ -47,6 +47,32 @@ spec:
             limits:
               cpu: "200m"
               memory: "128Mi"
+        - name: bootstrap-admin
+          image: ghcr.io/epalorleant/futsal-backend:latest
+          command: ["python", "scripts/create_root_user.py", "--optional"]
+          envFrom:
+            - secretRef:
+                name: backend-db-secret
+            - secretRef:
+                name: backend-bootstrap-secret
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-db-secret
+                  key: DATABASE_URL_ASYNC
+          securityContext:
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
       containers:
         - name: backend
           image: ghcr.io/epalorleant/futsal-backend:latest
@@ -110,4 +136,16 @@ stringData:
   DATABASE_URL: postgresql://calcio:calcio@db:5432/calcio
   # Async URL for FastAPI application (asyncpg)
   DATABASE_URL_ASYNC: postgresql+asyncpg://calcio:calcio@db:5432/calcio
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-bootstrap-secret
+  namespace: calcio
+type: Opaque
+stringData:
+  # Change these before deploying to production.
+  ROOT_EMAIL: admin@example.com
+  ROOT_USERNAME: admin
+  ROOT_PASSWORD: change-me-on-deploy
 
