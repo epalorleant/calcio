@@ -340,7 +340,12 @@ async def delete_user(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     """Delete a user account. Only root user can perform this action."""
-    target_user = await db.get(User, user_id)
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.player))
+        .where(User.id == user_id)
+    )
+    target_user = result.scalar_one_or_none()
     if not target_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
