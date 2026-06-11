@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import type { RecurrenceType, SessionTemplate, SessionTemplateCreate, SessionTemplateUpdate } from "../api/templates";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "../utils/datetimeLocal";
 
 interface TemplateFormProps {
   template?: SessionTemplate | null;
@@ -185,13 +186,15 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
                 style={commonStyles.input}
                 value={
                   form.recurrence_start
-                    ? new Date(form.recurrence_start).toISOString().slice(0, 16)
+                    ? toDatetimeLocalValue(form.recurrence_start)
                     : ""
                 }
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    recurrence_start: e.target.value ? new Date(e.target.value).toISOString() : null,
+                    recurrence_start: e.target.value
+                      ? fromDatetimeLocalValue(e.target.value).toISOString()
+                      : null,
                   }))
                 }
                 required
@@ -205,13 +208,15 @@ export function TemplateForm({ template, onSubmit, onCancel, loading = false, er
                 style={commonStyles.input}
                 value={
                   form.recurrence_end
-                    ? new Date(form.recurrence_end).toISOString().slice(0, 16)
+                    ? toDatetimeLocalValue(form.recurrence_end)
                     : ""
                 }
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    recurrence_end: e.target.value ? new Date(e.target.value).toISOString() : null,
+                    recurrence_end: e.target.value
+                      ? fromDatetimeLocalValue(e.target.value).toISOString()
+                      : null,
                   }))
                 }
                 required

@@ -3,6 +3,7 @@ import type { SessionTemplate } from "../api/templates";
 import { createSessionFromTemplate } from "../api/templates";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "../utils/datetimeLocal";
 
 interface CreateSessionFromTemplateModalProps {
   template: SessionTemplate;
@@ -23,9 +24,9 @@ export function CreateSessionFromTemplateModal({
       const daysAhead = template.day_of_week - today.getDay();
       const nextDate = new Date(today);
       nextDate.setDate(today.getDate() + (daysAhead < 0 ? daysAhead + 7 : daysAhead || 7));
-      return nextDate.toISOString().slice(0, 16);
+      return toDatetimeLocalValue(nextDate);
     }
-    return today.toISOString().slice(0, 16);
+    return toDatetimeLocalValue(today);
   });
   const [maxPlayers, setMaxPlayers] = useState(template.max_players);
   const [loading, setLoading] = useState(false);
@@ -37,13 +38,8 @@ export function CreateSessionFromTemplateModal({
     setError(null);
 
     try {
-      const sessionDate = new Date(date);
-      // Combine with template time
-      const [hours, minutes] = template.time_of_day.split(":").map(Number);
-      sessionDate.setHours(hours, minutes, 0, 0);
-
       const session = await createSessionFromTemplate(template.id, {
-        date: sessionDate.toISOString(),
+        date: fromDatetimeLocalValue(date).toISOString(),
         max_players: maxPlayers !== template.max_players ? maxPlayers : undefined,
       });
 

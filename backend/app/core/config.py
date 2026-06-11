@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     db_max_overflow: int = 20
     db_pool_timeout: int = 30
 
+    # Scheduling
+    app_timezone: str = "Europe/Paris"
+
     # Team Balancing
     team_size_default: int = 5
     team_balance_optimization_threshold: int = 14
