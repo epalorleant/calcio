@@ -11,6 +11,7 @@ export interface RegisterRequest {
   password: string;
   player_id?: number;
   create_player?: boolean;
+  player_name?: string;
 }
 
 export interface TokenResponse {

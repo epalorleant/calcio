@@ -1,5 +1,5 @@
 """Authentication schemas."""
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class Token(BaseModel):
@@ -27,7 +27,15 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=100)
     password: str = Field(..., min_length=8)
     player_id: int | None = None  # Optional: link to existing player
-    create_player: bool = False  # Optional: create a new player with username as name
+    create_player: bool = False  # Optional: create a new player profile
+    player_name: str | None = Field(None, max_length=255)
+
+    @model_validator(mode="after")
+    def validate_player_name_when_creating(self) -> "UserRegister":
+        if self.create_player and not self.player_id:
+            if not self.player_name or not self.player_name.strip():
+                raise ValueError("player_name is required when create_player is true")
+        return self
 
 
 class UserRead(BaseModel):

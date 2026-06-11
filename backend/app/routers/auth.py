@@ -54,16 +54,15 @@ async def register(
             detail="Username already taken",
         )
 
-    # If create_player is True, create a new player with username as name
+    # If create_player is True, create a new player with the provided display name
     if user_in.create_player:
         if user_in.player_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot both create a player and link to an existing player",
             )
-        # Create new player
         new_player = Player(
-            name=user_in.username,
+            name=user_in.player_name.strip(),
             active=True,
         )
         db.add(new_player)

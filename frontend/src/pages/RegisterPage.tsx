@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [createPlayer, setCreatePlayer] = useState(false);
+  const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,10 +32,21 @@ export default function RegisterPage() {
       return;
     }
 
+    if (createPlayer && !playerName.trim()) {
+      setError(t.playerNameRequired || "Player name is required");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await register({ email, username, password, create_player: createPlayer });
+      await register({
+        email,
+        username,
+        password,
+        create_player: createPlayer,
+        player_name: createPlayer ? playerName.trim() : undefined,
+      });
       const user = await getCurrentUser();
       setUser(user);
       navigate("/");
@@ -130,14 +142,35 @@ export default function RegisterPage() {
               type="checkbox"
               id="createPlayer"
               checked={createPlayer}
-              onChange={(e) => setCreatePlayer(e.target.checked)}
+              onChange={(e) => {
+                setCreatePlayer(e.target.checked);
+                if (!e.target.checked) {
+                  setPlayerName("");
+                }
+              }}
               disabled={isLoading}
               style={{ cursor: "pointer" }}
             />
             <label htmlFor="createPlayer" style={{ color: "#cbd5e1", cursor: "pointer" }}>
-              {t.createPlayerAccount || "Create a player profile with my username"}
+              {t.createPlayerAccount || "Create a player profile"}
             </label>
           </div>
+
+          {createPlayer && (
+            <div>
+              <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
+                {t.playerName || "Player name"}
+              </label>
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                required
+                style={{ ...commonStyles.input, width: "100%" }}
+                disabled={isLoading}
+              />
+            </div>
+          )}
 
           {error && (
             <div style={{ color: "#ef4444", fontSize: "0.875rem", padding: "0.5rem", backgroundColor: "#7f1d1d", borderRadius: "4px" }}>
