@@ -27,10 +27,10 @@ import {
 import { AvailabilityManagement } from "../components/AvailabilityManagement";
 import { BalancedTeamsSection } from "../components/BalancedTeamsSection";
 import { MatchResultSection } from "../components/MatchResultSection";
-import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
 import { useDateFormat } from "../hooks/useDateFormat";
 import { useAuth } from "../auth/AuthContext";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 
 export default function SessionDetailPage() {
   const { t } = useTranslation();
@@ -413,15 +413,22 @@ export default function SessionDetailPage() {
   }
 
   return (
-    <div style={commonStyles.container}>
-      <Link to="/sessions" style={commonStyles.linkButton} reloadDocument>
+    <div className="page-container">
+      <Link to="/sessions" className="back-link">
         ← {t.backToSessions}
       </Link>
-      <h1 style={commonStyles.heading}>{t.sessionDetails}</h1>
-      {loading && <p>{t.loading}</p>}
-      {error && <p style={commonStyles.error}>{error}</p>}
+      <h1 className="page-title">{t.sessionDetails}</h1>
+
+      <nav className="session-nav" aria-label="Session sections">
+        <a href="#section-availability">{t.sectionAvailability}</a>
+        <a href="#section-teams">{t.sectionTeams}</a>
+        <a href="#section-result">{t.sectionResult}</a>
+      </nav>
+
+      {loading && <LoadingSpinner label={t.loading} />}
+      {error && <p className="text-error">{error}</p>}
       {session && (
-        <div style={commonStyles.card}>
+        <div className="card">
           <p>
             <strong>{t.date}:</strong> {formatDate(session.date)}
           </p>

@@ -4,6 +4,7 @@ import { createSessionFromTemplate } from "../api/templates";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from "../utils/datetimeLocal";
+import { Modal } from "./ui/Modal";
 
 interface CreateSessionFromTemplateModalProps {
   template: SessionTemplate;
@@ -18,7 +19,6 @@ export function CreateSessionFromTemplateModal({
 }: CreateSessionFromTemplateModalProps) {
   const { t } = useTranslation();
   const [date, setDate] = useState(() => {
-    // Default to next occurrence of the day of week, or today
     const today = new Date();
     if (template.day_of_week !== null) {
       const daysAhead = template.day_of_week - today.getDay();
@@ -42,7 +42,6 @@ export function CreateSessionFromTemplateModal({
         date: fromDatetimeLocalValue(date).toISOString(),
         max_players: maxPlayers !== template.max_players ? maxPlayers : undefined,
       });
-
       onSuccess(session.id);
       onClose();
     } catch (err) {
@@ -54,84 +53,54 @@ export function CreateSessionFromTemplateModal({
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          ...commonStyles.card,
-          maxWidth: "500px",
-          width: "90%",
-          zIndex: 1001,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 style={commonStyles.heading}>{t.createSessionFromTemplate}</h2>
-        <div style={{ marginBottom: "1rem" }}>
-          <p>
-            <strong>Modèle:</strong> {template.name}
-          </p>
-          <p>
-            <strong>{t.location}:</strong> {template.location}
-          </p>
-          <p>
-            <strong>{t.time}:</strong> {template.time_of_day}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} style={commonStyles.form}>
-          <label style={commonStyles.field}>
-            <span style={commonStyles.label}>{t.date}</span>
-            <input
-              type="datetime-local"
-              style={commonStyles.input}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </label>
-
-          <label style={commonStyles.field}>
-            <span style={commonStyles.label}>{t.maxPlayersLabel}</span>
-            <input
-              type="number"
-              min={2}
-              max={30}
-              style={commonStyles.input}
-              value={maxPlayers}
-              onChange={(e) => setMaxPlayers(Number(e.target.value))}
-            />
-          </label>
-
-          {error && <p style={commonStyles.error}>{error}</p>}
-
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-            <button type="submit" style={commonStyles.button} disabled={loading}>
-              {loading ? t.creating : t.createSession}
-            </button>
-            <button
-              type="button"
-              style={{ ...commonStyles.button, backgroundColor: "#6b7280" }}
-              onClick={onClose}
-            >
-              {t.cancel}
-            </button>
-          </div>
-        </form>
+    <Modal open={true} title={t.createSessionFromTemplate} onClose={onClose}>
+      <div style={{ marginBottom: "1rem" }}>
+        <p>
+          <strong>Modèle:</strong> {template.name}
+        </p>
+        <p>
+          <strong>{t.location}:</strong> {template.location}
+        </p>
+        <p>
+          <strong>{t.time}:</strong> {template.time_of_day}
+        </p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="form-grid" style={{ gridTemplateColumns: "1fr" }}>
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>{t.date}</span>
+          <input
+            type="datetime-local"
+            className="field-input"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+        </label>
+
+        <label style={commonStyles.field}>
+          <span style={commonStyles.label}>{t.maxPlayersLabel}</span>
+          <input
+            type="number"
+            min={2}
+            max={30}
+            className="field-input"
+            value={maxPlayers}
+            onChange={(e) => setMaxPlayers(Number(e.target.value))}
+          />
+        </label>
+
+        {error && <p className="text-error">{error}</p>}
+
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? t.creating : t.createSession}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            {t.cancel}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
-

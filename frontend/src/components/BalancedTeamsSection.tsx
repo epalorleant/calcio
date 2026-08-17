@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import type { BalancedTeamsResponse, SessionTeam } from "../api/sessions";
 import { TeamCard } from "./TeamCard";
 import { commonStyles } from "../styles/common";
@@ -26,11 +27,12 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
   matchInitiated = false,
 }: BalancedTeamsSectionProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const canDragAndDrop = isAdmin && balanced !== null && onPlayerTeamChange !== undefined && !matchInitiated;
 
   return (
-    <section style={commonStyles.section}>
-      <div style={commonStyles.sectionHeader}>
+    <section style={commonStyles.section} id="section-teams" className="session-section">
+      <div className="section-header" style={commonStyles.sectionHeader}>
         <h2 style={commonStyles.subheading}>{t.balancedTeams}</h2>
         {isAuthenticated && (
           <button
@@ -57,13 +59,13 @@ export const BalancedTeamsSection = memo(function BalancedTeamsSection({
       </div>
       {canDragAndDrop && (
         <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontSize: "0.875rem" }}>
-          {typeof window !== "undefined" && window.innerWidth <= 768
+          {isMobile
             ? (t.tapToMove || "Tap on a player to move them between teams")
             : (t.dragAndDropHint || "Drag players between teams to reorganize")}
         </p>
       )}
       {balanced ? (
-        <div style={commonStyles.teamsGrid}>
+        <div className="teams-grid" style={commonStyles.teamsGrid}>
           <TeamCard
             title={t.teamA}
             players={balanced.team_a}

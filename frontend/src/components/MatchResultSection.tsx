@@ -50,7 +50,7 @@ export const MatchResultSection = memo(function MatchResultSection({
 }: MatchResultSectionProps) {
   const { t } = useTranslation();
   return (
-    <section style={commonStyles.section}>
+    <section style={commonStyles.section} id="section-result" className="session-section">
       <h2 style={commonStyles.subheading}>{t.matchResult}</h2>
       {!isAuthenticated && (
         <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
@@ -60,7 +60,7 @@ export const MatchResultSection = memo(function MatchResultSection({
       {matchError && <p style={commonStyles.error}>{matchError}</p>}
       {matchSuccess && <p style={commonStyles.success}>{matchSuccess}</p>}
       {isAuthenticated && (
-        <div style={commonStyles.scoreRow}>
+        <div className="score-row" style={commonStyles.scoreRow}>
         <label style={commonStyles.field}>
           <span style={commonStyles.label}>{t.scoreTeamA}</span>
           <input
@@ -93,7 +93,7 @@ export const MatchResultSection = memo(function MatchResultSection({
       </div>
       )}
       {!isAuthenticated && (
-        <div style={commonStyles.scoreRow}>
+        <div className="score-row" style={commonStyles.scoreRow}>
         <label style={commonStyles.field}>
           <span style={commonStyles.label}>{t.scoreTeamA}</span>
           <div style={{ ...commonStyles.input, backgroundColor: "#f3f4f6", padding: "0.45rem 0.5rem" }}>
@@ -109,7 +109,7 @@ export const MatchResultSection = memo(function MatchResultSection({
       </div>
       )}
 
-      <div style={commonStyles.teamsGrid}>
+      <div className="teams-grid" style={commonStyles.teamsGrid}>
         <MatchStatsTable
           title={t.teamA}
           players={teamAPlayers}

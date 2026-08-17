@@ -16,11 +16,17 @@ import { CreateSessionFromTemplateModal } from "../components/CreateSessionFromT
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
 import { useDateFormat } from "../hooks/useDateFormat";
+import { useConfirmDialog } from "../components/ui/ConfirmDialog";
+import { useToast } from "../components/ui/Toast";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { PageHeader } from "../components/layout/PageHeader";
 
 export default function TemplatesPage() {
   const { t } = useTranslation();
   const { formatDateOnly } = useDateFormat();
   const navigate = useNavigate();
+  const { confirm } = useConfirmDialog();
+  const { showToast } = useToast();
   const [templates, setTemplates] = useState<SessionTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +58,7 @@ export default function TemplatesPage() {
   };
 
   const handleEdit = (id: number) => {
-    const template = templates.find((t) => t.id === id);
+    const template = templates.find((tpl) => tpl.id === id);
     if (template) {
       setEditingTemplate(template);
       setShowForm(true);
@@ -77,7 +83,11 @@ export default function TemplatesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm(t.deleteTemplateConfirm);
+    const confirmed = await confirm({
+      message: t.deleteTemplateConfirm,
+      variant: "danger",
+      confirmLabel: t.delete,
+    });
     if (!confirmed) return;
     try {
       setError(null);
@@ -90,10 +100,8 @@ export default function TemplatesPage() {
   };
 
   const handleCreateSession = (id: number) => {
-    const template = templates.find((t) => t.id === id);
-    if (template) {
-      setCreateSessionTemplate(template);
-    }
+    const template = templates.find((tpl) => tpl.id === id);
+    if (template) setCreateSessionTemplate(template);
   };
 
   const handleSessionCreated = (sessionId: number) => {
@@ -101,19 +109,22 @@ export default function TemplatesPage() {
   };
 
   const handleGenerateRecurring = async (id: number) => {
-    const template = templates.find((t) => t.id === id);
+    const template = templates.find((tpl) => tpl.id === id);
     if (!template) return;
 
     const startDate = template.recurrence_start ? formatDateOnly(template.recurrence_start) : t.start;
     const endDate = template.recurrence_end ? formatDateOnly(template.recurrence_end) : t.end;
-    const confirmed = window.confirm(t.generateRecurringConfirm(template.name, startDate, endDate));
+    const confirmed = await confirm({
+      message: t.generateRecurringConfirm(template.name, startDate, endDate),
+      confirmLabel: t.generateRecurring,
+    });
     if (!confirmed) return;
 
     try {
       setError(null);
       setLoading(true);
       const sessions = await generateRecurringSessions(id);
-      alert(t.successfullyCreated(sessions.length));
+      showToast(t.successfullyCreated(sessions.length), "success");
       await loadTemplates();
     } catch (err) {
       console.error(err);
@@ -123,18 +134,19 @@ export default function TemplatesPage() {
     }
   };
 
-
   return (
-    <div style={commonStyles.container}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h1 style={commonStyles.heading}>{t.sessionTemplates}</h1>
-        <button style={commonStyles.button} onClick={handleCreate}>
-          {t.createTemplate}
-        </button>
-      </div>
+    <div className="page-container">
+      <PageHeader
+        title={t.sessionTemplates}
+        action={
+          <button className="btn btn-primary" onClick={handleCreate}>
+            {t.createTemplate}
+          </button>
+        }
+      />
 
       {showForm && (
-        <div style={commonStyles.card}>
+        <div className="card">
           <h2 style={commonStyles.subheading}>{editingTemplate ? t.editTemplate : t.createTemplate}</h2>
           <TemplateForm
             template={editingTemplate}
@@ -150,8 +162,8 @@ export default function TemplatesPage() {
 
       {!showForm && (
         <>
-          {loading && <p>{t.loadingTemplates}</p>}
-          {error && <p style={commonStyles.error}>{error}</p>}
+          {loading && <LoadingSpinner label={t.loadingTemplates} />}
+          {error && <p className="text-error">{error}</p>}
           {!loading && templates.length === 0 && <p>{t.noTemplates}</p>}
 
           {templates.length > 0 && (
@@ -181,4 +193,3 @@ export default function TemplatesPage() {
     </div>
   );
 }
-

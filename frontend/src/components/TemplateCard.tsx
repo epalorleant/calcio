@@ -1,4 +1,3 @@
-import { memo } from "react";
 import type { SessionTemplate } from "../api/templates";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
@@ -12,7 +11,7 @@ interface TemplateCardProps {
   onGenerateRecurring: (id: number) => void;
 }
 
-export const TemplateCard = memo(function TemplateCard({
+export function TemplateCard({
   template,
   onEdit,
   onDelete,
@@ -25,7 +24,6 @@ export const TemplateCard = memo(function TemplateCard({
   const dayName = template.day_of_week !== null ? dayNames[template.day_of_week] : t.oneTime;
 
   const formatTime = (timeStr: string) => {
-    // timeStr is in HH:MM format
     const [hours, minutes] = timeStr.split(":");
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? "PM" : "AM";
@@ -36,73 +34,66 @@ export const TemplateCard = memo(function TemplateCard({
   const hasRecurrence = template.recurrence_type && template.recurrence_type !== "NONE";
 
   return (
-    <div style={commonStyles.card}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "1rem" }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <h3 style={{ ...commonStyles.smallHeading, margin: 0 }}>{template.name}</h3>
-            {!template.active && (
-              <span style={{ ...commonStyles.muted, fontSize: "0.85rem", fontStyle: "italic" }}>({t.inactive})</span>
-            )}
-          </div>
-          {template.description && (
-            <p style={{ ...commonStyles.muted, marginBottom: "0.5rem" }}>{template.description}</p>
+    <div className="card template-card">
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+          <h3 style={{ ...commonStyles.smallHeading, margin: 0 }}>{template.name}</h3>
+          {!template.active && (
+            <span className="text-muted" style={{ fontSize: "0.85rem", fontStyle: "italic" }}>
+              ({t.inactive})
+            </span>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem" }}>
-            <p style={{ margin: "0.25rem 0" }}>
-              <strong>{t.location}:</strong> {template.location}
-            </p>
-            <p style={{ margin: "0.25rem 0" }}>
-              <strong>{t.time}:</strong> {formatTime(template.time_of_day)}
-              {template.day_of_week !== null && ` (${dayName})`}
-            </p>
-            <p style={{ margin: "0.25rem 0" }}>
-              <strong>{t.maxPlayersLabel}:</strong> {template.max_players}
-            </p>
-            {hasRecurrence && (
-              <>
-                <p style={{ margin: "0.25rem 0" }}>
-                  <strong>{t.recurrenceType}:</strong> {template.recurrence_type === "WEEKLY" ? t.weekly : template.recurrence_type === "BIWEEKLY" ? t.biweekly : t.monthly}
-                </p>
-                {template.recurrence_start && template.recurrence_end && (
-                  <p style={{ margin: "0.25rem 0", ...commonStyles.muted }}>
-                    {formatDateOnly(template.recurrence_start)} - {formatDateOnly(template.recurrence_end)}
-                  </p>
-                )}
-              </>
-            )}
-            <p style={{ margin: "0.25rem 0", ...commonStyles.muted }}>
-              {t.sessionsCreated(template.session_count ?? 0)}
-            </p>
-          </div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", flexDirection: "column", minWidth: "140px" }}>
-          <button style={commonStyles.button} onClick={() => onCreateSession(template.id)}>
-            {t.createSessionFromTemplate}
-          </button>
+        {template.description && <p className="text-muted" style={{ marginBottom: "0.5rem" }}>{template.description}</p>}
+        <div className="template-card-meta">
+          <p style={{ margin: "0.25rem 0" }}>
+            <strong>{t.location}:</strong> {template.location}
+          </p>
+          <p style={{ margin: "0.25rem 0" }}>
+            <strong>{t.time}:</strong> {formatTime(template.time_of_day)}
+            {template.day_of_week !== null && ` (${dayName})`}
+          </p>
+          <p style={{ margin: "0.25rem 0" }}>
+            <strong>{t.maxPlayersLabel}:</strong> {template.max_players}
+          </p>
           {hasRecurrence && (
-            <button
-              style={{ ...commonStyles.button, backgroundColor: "#059669" }}
-              onClick={() => onGenerateRecurring(template.id)}
-            >
-              {t.generateRecurring}
-            </button>
+            <>
+              <p style={{ margin: "0.25rem 0" }}>
+                <strong>{t.recurrenceType}:</strong>{" "}
+                {template.recurrence_type === "WEEKLY"
+                  ? t.weekly
+                  : template.recurrence_type === "BIWEEKLY"
+                    ? t.biweekly
+                    : t.monthly}
+              </p>
+              {template.recurrence_start && template.recurrence_end && (
+                <p className="text-muted" style={{ margin: "0.25rem 0" }}>
+                  {formatDateOnly(template.recurrence_start)} - {formatDateOnly(template.recurrence_end)}
+                </p>
+              )}
+            </>
           )}
-          <button
-            style={{ ...commonStyles.button, backgroundColor: "#6b7280" }}
-            onClick={() => onEdit(template.id)}
-          >
-            {t.edit}
-          </button>
-          <button
-            style={{ ...commonStyles.button, backgroundColor: "#dc2626" }}
-            onClick={() => onDelete(template.id)}
-          >
-            {t.delete}
-          </button>
+          <p className="text-muted" style={{ margin: "0.25rem 0" }}>
+            {t.sessionsCreated(template.session_count ?? 0)}
+          </p>
         </div>
+      </div>
+      <div className="template-card-actions">
+        <button className="btn btn-primary" onClick={() => onCreateSession(template.id)}>
+          {t.createSessionFromTemplate}
+        </button>
+        {hasRecurrence && (
+          <button className="btn btn-primary" style={{ background: "var(--color-success)" }} onClick={() => onGenerateRecurring(template.id)}>
+            {t.generateRecurring}
+          </button>
+        )}
+        <button className="btn btn-secondary" onClick={() => onEdit(template.id)}>
+          {t.edit}
+        </button>
+        <button className="btn btn-danger" onClick={() => onDelete(template.id)}>
+          {t.delete}
+        </button>
       </div>
     </div>
   );
-});
-
+}

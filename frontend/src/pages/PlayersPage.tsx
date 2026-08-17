@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
-import type { FormEvent, CSSProperties } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPlayer, deletePlayer, getPlayers, updatePlayer, type Player, type PlayerCreate } from "../api/players";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../auth/AuthContext";
+import { ResponsiveTable } from "../components/ui/ResponsiveTable";
+import { useConfirmDialog } from "../components/ui/ConfirmDialog";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { PageHeader } from "../components/layout/PageHeader";
 
 export default function PlayersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const isAdmin = user?.is_admin || user?.is_root;
+  const { confirm } = useConfirmDialog();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +29,8 @@ export default function PlayersPage() {
     try {
       setLoading(true);
       setError(null);
-      // Fetch all players (active and inactive, but not deleted - deleted players are excluded by backend)
       const data = await getPlayers();
       if (!Array.isArray(data)) {
-        console.error("Unexpected players payload", data);
         setError(t.unexpectedResponse);
         setPlayers([]);
         return;
@@ -82,7 +85,11 @@ export default function PlayersPage() {
   };
 
   const handleDelete = async (player: Player) => {
-    const confirmed = window.confirm(t.deletePlayerConfirm(player.name));
+    const confirmed = await confirm({
+      message: t.deletePlayerConfirm(player.name),
+      variant: "danger",
+      confirmLabel: t.delete,
+    });
     if (!confirmed) return;
     try {
       setError(null);
@@ -95,178 +102,84 @@ export default function PlayersPage() {
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>{t.playersPage}</h1>
+    <div className="page-container">
+      <PageHeader title={t.playersPage} />
 
       {isAdmin && (
-        <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-            style={styles.input}
+        <form onSubmit={handleSubmit} className="form-grid">
+          <input
+            className="field-input"
             type="text"
             placeholder={t.playerName}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-        />
-        <input
-            style={styles.input}
+          />
+          <input
+            className="field-input"
             type="text"
             placeholder={t.preferredPosition}
             value={form.preferred_position ?? ""}
             onChange={(e) => setForm((f) => ({ ...f, preferred_position: e.target.value }))}
-        />
-        <label style={styles.checkboxRow}>
-          <input
+          />
+          <label className="checkbox-row">
+            <input
               type="checkbox"
               checked={form.active ?? true}
               onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
-          />
-          <span style={styles.checkboxLabel}>{t.active}</span>
-        </label>
-        <button style={styles.button} type="submit">{t.addPlayer}</button>
-      </form>
+            />
+            <span>{t.active}</span>
+          </label>
+          <button className="btn btn-primary" type="submit">
+            {t.addPlayer}
+          </button>
+        </form>
       )}
 
-      {!isAuthenticated && (
-        <p style={{ color: "#6b7280", fontStyle: "italic", marginBottom: "1rem" }}>
-          {t.readOnlyMode || "Read-only mode. Please log in to make changes."}
-        </p>
-      )}
+      {!isAuthenticated && <p className="text-muted" style={{ fontStyle: "italic", marginBottom: "1rem" }}>{t.readOnlyMode}</p>}
 
-      {loading && <p>{t.loadingPlayers}</p>}
-      {error && <p style={styles.error}>{error}</p>}
-
+      {loading && <LoadingSpinner label={t.loadingPlayers} />}
+      {error && <p className="text-error">{error}</p>}
       {!loading && players.length === 0 && <p>{t.noPlayers}</p>}
 
-      {players.length > 0 && (
-        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-          <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>{t.playerName}</th>
-              <th style={styles.th}>{t.preferredPosition}</th>
-              <th style={styles.th}>Note</th>
-              <th style={styles.th}>{t.active}</th>
-              {isAuthenticated && <th style={styles.th}>{t.actions}</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((player) => {
-              // Regular users can only view their own profile
-              const canViewProfile = isAdmin || (isAuthenticated && user?.player_id === player.id);
-              
-              return (
-                <tr key={player.id}>
-                  <td style={styles.td}>
-                    {canViewProfile ? (
-                      <button
-                        style={styles.linkButton}
-                        onClick={() => navigate(`/players/${player.id}`)}
-                        title={t.viewProfile || "View profile"}
-                      >
-                        {player.name}
-                      </button>
-                    ) : (
-                      player.name
-                    )}
-                  </td>
-                  <td style={styles.td}>{player.preferred_position || "—"}</td>
-                  <td style={styles.td}>
-                    {player.rating ? player.rating.overall_rating.toFixed(1) : "—"}
-                  </td>
-                  <td style={styles.td}>{player.active ? t.yes : t.no}</td>
-                  {isAdmin && (
-                    <td style={styles.td}>
-                      <button style={styles.linkButton} onClick={() => void toggleActive(player)}>
-                        {player.active ? t.deactivate : t.activate}
-                      </button>
-                      <button
-                        style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
-                        onClick={() => void handleDelete(player)}
-                      >
-                        {t.delete}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        </div>
+      {!loading && players.length > 0 && (
+        <ResponsiveTable
+          data={players}
+          getRowKey={(player) => player.id}
+          columns={[
+            {
+              key: "name",
+              header: t.playerName,
+              render: (player) => {
+                const canViewProfile = isAdmin || (isAuthenticated && user?.player_id === player.id);
+                return canViewProfile ? (
+                  <button className="btn-action" onClick={() => navigate(`/players/${player.id}`)}>
+                    {player.name}
+                  </button>
+                ) : (
+                  player.name
+                );
+              },
+            },
+            { key: "position", header: t.preferredPosition, render: (player) => player.preferred_position || "—" },
+            { key: "rating", header: "Note", render: (player) => (player.rating ? player.rating.overall_rating.toFixed(1) : "—") },
+            { key: "active", header: t.active, render: (player) => (player.active ? t.yes : t.no) },
+          ]}
+          actions={
+            isAdmin
+              ? (player) => (
+                  <>
+                    <button className="btn-action" onClick={() => void toggleActive(player)}>
+                      {player.active ? t.deactivate : t.activate}
+                    </button>
+                    <button className="btn-action btn-action-danger" onClick={() => void handleDelete(player)}>
+                      {t.delete}
+                    </button>
+                  </>
+                )
+              : undefined
+          }
+        />
       )}
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  container: {
-    maxWidth: "960px",
-    margin: "0 auto",
-    padding: "1.5rem",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    width: "100%",
-  },
-  heading: {
-    marginBottom: "1rem",
-  },
-  form: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-    gap: "0.75rem",
-    alignItems: "end",
-    marginBottom: "1rem",
-  },
-  input: {
-    padding: "0.75rem 0.5rem",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
-    fontSize: "16px", // Prevent zoom on iOS
-    minHeight: "44px", // Touch target size
-    width: "100%",
-  },
-  checkboxRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.35rem",
-  },
-  checkboxLabel: {
-    fontSize: "0.95rem",
-  },
-  button: {
-    padding: "0.75rem 1rem",
-    backgroundColor: "#2563eb",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    minHeight: "44px", // Touch target size
-    fontSize: "1rem",
-    touchAction: "manipulation",
-  },
-  error: {
-    color: "#b91c1c",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    display: "block",
-    overflowX: "auto",
-    whiteSpace: "nowrap",
-  },
-  th: {
-    textAlign: "left",
-    borderBottom: "1px solid #e5e7eb",
-    padding: "0.5rem 0.25rem",
-  },
-  td: {
-    padding: "0.5rem 0.25rem",
-    borderBottom: "1px solid #f3f4f6",
-  },
-  linkButton: {
-    background: "none",
-    border: "none",
-    color: "#2563eb",
-    cursor: "pointer",
-    padding: 0,
-  },
-};

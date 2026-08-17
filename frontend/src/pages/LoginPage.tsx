@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../auth/AuthContext";
 import { login, getCurrentUser } from "../api/auth";
-import { commonStyles } from "../styles/common";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -11,6 +10,7 @@ export default function LoginPage() {
   const { login: setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,90 +24,68 @@ export default function LoginPage() {
       const user = await getCurrentUser();
       setUser(user);
       navigate("/");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t.loginError || "Failed to login");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(detail || t.loginError || "Failed to login");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-      display: "flex", 
-      justifyContent: "center", 
-      alignItems: "center", 
-      minHeight: "100vh", 
-      backgroundColor: "#0f172a",
-      padding: "1rem",
-    }}>
-      <div style={{ 
-        width: "100%", 
-        maxWidth: "400px", 
-        padding: "2rem", 
-        backgroundColor: "#1e293b", 
-        borderRadius: "8px",
-      }}>
-        <h1 style={{ ...commonStyles.h1, color: "#e2e8f0", marginBottom: "1.5rem", textAlign: "center" }}>
-          {t.login || "Login"}
-        </h1>
+    <div className="auth-card">
+      <h1 className="auth-card-title">{t.login}</h1>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-              {t.email || "Email"}
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ ...commonStyles.input, width: "100%" }}
-              disabled={isLoading}
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <label className="field">
+          <span className="field-label">{t.email}</span>
+          <input
+            type="email"
+            className="field-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+            disabled={isLoading}
+          />
+        </label>
 
-          <div>
-            <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-              {t.password || "Password"}
-            </label>
+        <label className="field">
+          <span className="field-label">{t.password}</span>
+          <div className="password-field">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
+              className="field-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               required
-              style={{ ...commonStyles.input, width: "100%" }}
               disabled={isLoading}
             />
+            <button
+              type="button"
+              className="btn btn-ghost password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? t.hidePassword : t.showPassword}
+            >
+              {showPassword ? t.hidePassword : t.showPassword}
+            </button>
           </div>
+        </label>
 
-          {error && (
-            <div style={{ color: "#ef4444", fontSize: "0.875rem", padding: "0.5rem", backgroundColor: "#7f1d1d", borderRadius: "4px" }}>
-              {error}
-            </div>
-          )}
+        {error && <div className="text-error" style={{ padding: "0.5rem", background: "#7f1d1d", borderRadius: "4px", color: "#fca5a5" }}>{error}</div>}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              ...commonStyles.button,
-              width: "100%",
-              backgroundColor: isLoading ? "#475569" : "#2563eb",
-              cursor: isLoading ? "not-allowed" : "pointer",
-            }}
-          >
-            {isLoading ? (t.loading || "Loading...") : (t.login || "Login")}
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+            {isLoading ? t.loading : t.login}
           </button>
-        </form>
-
-        <div style={{ marginTop: "1.5rem", textAlign: "center", color: "#94a3b8" }}>
-          {t.noAccount || "Don't have an account?"}{" "}
-          <Link to="/register" style={{ color: "#60a5fa", textDecoration: "none" }}>
-            {t.register || "Register"}
-          </Link>
         </div>
+      </form>
+
+      <div className="auth-footer">
+        {t.noAccount}{" "}
+        <Link to="/register">{t.register}</Link>
       </div>
     </div>
   );
 }
-

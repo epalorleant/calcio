@@ -2,6 +2,7 @@ import { memo, useState, useRef, useEffect } from "react";
 import type { BalancedTeamsResponse, SessionTeam } from "../api/sessions";
 import { commonStyles } from "../styles/common";
 import { useTranslation } from "../i18n/useTranslation";
+import { useIsMobile } from "../hooks/useMediaQuery";
 
 interface TeamCardProps {
   title: string;
@@ -26,7 +27,7 @@ export const TeamCard = memo(function TeamCard({
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+  const isMobile = useIsMobile();
 
   // Handle desktop drag and drop
   const handleDragStart = (e: React.DragEvent, playerId: number) => {

@@ -30,7 +30,8 @@ export const BenchStatsTable = memo(function BenchStatsTable({
       <h3 style={commonStyles.smallHeading}>{t.bench}</h3>
       {players.length === 0 && <p style={commonStyles.muted}>{t.noBenchPlayers}</p>}
       {players.length > 0 && (
-        <table style={commonStyles.table}>
+        <div className="table-scroll">
+          <table className="data-table">
           <thead>
             <tr>
               <th style={commonStyles.th}>{t.player}</th>
@@ -110,6 +111,7 @@ export const BenchStatsTable = memo(function BenchStatsTable({
             })}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

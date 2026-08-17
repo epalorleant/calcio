@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import type { Player } from "../api/players";
 import type { Availability, SessionPlayer } from "../api/sessions";
 import { commonStyles } from "../styles/common";
+import { ResponsiveTable } from "./ui/ResponsiveTable";
 import { useTranslation } from "../i18n/useTranslation";
 
 interface AvailabilityManagementProps {
@@ -68,7 +69,7 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
   };
 
   return (
-    <section style={commonStyles.section}>
+    <section style={commonStyles.section} id="section-availability" className="session-section">
       <h2 style={commonStyles.subheading}>{t.manageAvailability}</h2>
       {!isAuthenticated && (
         <p style={{ ...commonStyles.muted, marginBottom: "0.5rem", fontStyle: "italic" }}>
@@ -183,53 +184,38 @@ export const AvailabilityManagement = memo(function AvailabilityManagement({
         <h3 style={commonStyles.smallHeading}>{t.currentAvailability}</h3>
         {availability.length === 0 && <p>{t.noEntriesYet}</p>}
         {availability.length > 0 && (
-          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <table style={{ ...commonStyles.table, minWidth: "600px", display: "table" }}>
-              <thead>
-                <tr>
-                  <th style={commonStyles.th}>{t.player}</th>
-                  <th style={commonStyles.th}>{t.availability}</th>
-                  <th style={commonStyles.th}>{t.team}</th>
-                  <th style={commonStyles.th}>{t.goalkeeperShort}</th>
-                  {isAuthenticated && <th style={{ ...commonStyles.th, width: "80px", textAlign: "center" }}>{t.actions}</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {availability.map((entry) => {
-                  const playerName = players.find((player) => player.id === entry.player_id)?.name || entry.player_id;
-                  return (
-                    <tr key={entry.id}>
-                      <td style={commonStyles.td}>{playerName}</td>
-                      <td style={commonStyles.td}>
-                        {entry.availability === "YES" ? t.yes : entry.availability === "NO" ? t.no : t.maybe}
-                      </td>
-                      <td style={commonStyles.td}>{entry.team ?? "—"}</td>
-                      <td style={commonStyles.td}>{entry.is_goalkeeper ? t.yes : t.no}</td>
-                      {isAuthenticated && (
-                        <td style={{ ...commonStyles.td, textAlign: "center" }}>
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(entry)}
-                            disabled={matchInitiated}
-                            style={{
-                              ...commonStyles.button,
-                              backgroundColor: "#6b7280",
-                              padding: "0.35rem 0.6rem",
-                              fontSize: "0.85rem",
-                              opacity: matchInitiated ? 0.5 : 1,
-                              cursor: matchInitiated ? "not-allowed" : "pointer",
-                            }}
-                          >
-                            {t.edit}
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            data={availability}
+            getRowKey={(entry) => entry.id}
+            columns={[
+              {
+                key: "player",
+                header: t.player,
+                render: (entry) => players.find((player) => player.id === entry.player_id)?.name || entry.player_id,
+              },
+              {
+                key: "availability",
+                header: t.availability,
+                render: (entry) => (entry.availability === "YES" ? t.yes : entry.availability === "NO" ? t.no : t.maybe),
+              },
+              { key: "team", header: t.team, render: (entry) => entry.team ?? "—" },
+              { key: "gk", header: t.goalkeeperShort, render: (entry) => (entry.is_goalkeeper ? t.yes : t.no) },
+            ]}
+            actions={
+              isAuthenticated
+                ? (entry) => (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleEdit(entry)}
+                      disabled={matchInitiated}
+                    >
+                      {t.edit}
+                    </button>
+                  )
+                : undefined
+            }
+          />
         )}
       </div>
     </section>

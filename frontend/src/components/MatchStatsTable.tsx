@@ -27,7 +27,8 @@ export const MatchStatsTable = memo(function MatchStatsTable({
       <h3 style={commonStyles.smallHeading}>{title}</h3>
       {players.length === 0 && <p style={commonStyles.muted}>{t.assignPlayersToRecordStats}</p>}
       {players.length > 0 && (
-        <table style={commonStyles.table}>
+        <div className="table-scroll">
+          <table className="data-table">
           <thead>
             <tr>
               <th style={commonStyles.th}>{t.player}</th>
@@ -87,6 +88,7 @@ export const MatchStatsTable = memo(function MatchStatsTable({
             })}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

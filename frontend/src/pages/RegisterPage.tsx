@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../auth/AuthContext";
 import { register, getCurrentUser } from "../api/auth";
-import { commonStyles } from "../styles/common";
 
 export default function RegisterPage() {
   const { t } = useTranslation();
@@ -13,6 +12,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [createPlayer, setCreatePlayer] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,22 +23,19 @@ export default function RegisterPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError(t.passwordsDoNotMatch || "Passwords do not match");
+      setError(t.passwordsDoNotMatch);
       return;
     }
-
     if (password.length < 8) {
-      setError(t.passwordTooShort || "Password must be at least 8 characters");
+      setError(t.passwordTooShort);
       return;
     }
-
     if (createPlayer && !playerName.trim()) {
-      setError(t.playerNameRequired || "Player name is required");
+      setError(t.playerNameRequired);
       return;
     }
 
     setIsLoading(true);
-
     try {
       await register({
         email,
@@ -50,156 +47,126 @@ export default function RegisterPage() {
       const user = await getCurrentUser();
       setUser(user);
       navigate("/");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t.registerError || "Failed to register");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(detail || t.registerError || "Failed to register");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-      display: "flex", 
-      justifyContent: "center", 
-      alignItems: "center", 
-      minHeight: "100vh", 
-      backgroundColor: "#0f172a",
-      padding: "1rem",
-    }}>
-      <div style={{ 
-        width: "100%", 
-        maxWidth: "400px", 
-        padding: "2rem", 
-        backgroundColor: "#1e293b", 
-        borderRadius: "8px",
-      }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#e2e8f0", marginBottom: "1.5rem", textAlign: "center" }}>
-          {t.register || "Register"}
-        </h1>
+    <div className="auth-card">
+      <h1 className="auth-card-title">{t.register}</h1>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-              {t.email || "Email"}
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ ...commonStyles.input, width: "100%" }}
-              disabled={isLoading}
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <label className="field">
+          <span className="field-label">{t.email}</span>
+          <input
+            type="email"
+            className="field-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+            disabled={isLoading}
+          />
+        </label>
 
-          <div>
-            <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-              {t.username || "Username"}
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              minLength={3}
-              style={{ ...commonStyles.input, width: "100%" }}
-              disabled={isLoading}
-            />
-          </div>
+        <label className="field">
+          <span className="field-label">{t.username}</span>
+          <input
+            type="text"
+            className="field-input"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            required
+            minLength={3}
+            disabled={isLoading}
+          />
+        </label>
 
-          <div>
-            <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-              {t.password || "Password"}
-            </label>
+        <label className="field">
+          <span className="field-label">{t.password}</span>
+          <div className="password-field">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
+              className="field-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
               minLength={8}
-              style={{ ...commonStyles.input, width: "100%" }}
               disabled={isLoading}
             />
+            <button
+              type="button"
+              className="btn btn-ghost password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? t.hidePassword : t.showPassword}
+            >
+              {showPassword ? t.hidePassword : t.showPassword}
+            </button>
           </div>
+        </label>
 
-          <div>
-            <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-              {t.confirmPassword || "Confirm Password"}
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              style={{ ...commonStyles.input, width: "100%" }}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="checkbox"
-              id="createPlayer"
-              checked={createPlayer}
-              onChange={(e) => {
-                setCreatePlayer(e.target.checked);
-                if (!e.target.checked) {
-                  setPlayerName("");
-                }
-              }}
-              disabled={isLoading}
-              style={{ cursor: "pointer" }}
-            />
-            <label htmlFor="createPlayer" style={{ color: "#cbd5e1", cursor: "pointer" }}>
-              {t.createPlayerAccount || "Create a player profile"}
-            </label>
-          </div>
-
-          {createPlayer && (
-            <div>
-              <label style={{ ...commonStyles.label, color: "#cbd5e1" }}>
-                {t.playerName || "Player name"}
-              </label>
-              <input
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                required
-                style={{ ...commonStyles.input, width: "100%" }}
-                disabled={isLoading}
-              />
-            </div>
-          )}
-
-          {error && (
-            <div style={{ color: "#ef4444", fontSize: "0.875rem", padding: "0.5rem", backgroundColor: "#7f1d1d", borderRadius: "4px" }}>
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
+        <label className="field">
+          <span className="field-label">{t.confirmPassword}</span>
+          <input
+            type={showPassword ? "text" : "password"}
+            className="field-input"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            required
+            minLength={8}
             disabled={isLoading}
-            style={{
-              ...commonStyles.button,
-              width: "100%",
-              backgroundColor: isLoading ? "#475569" : "#2563eb",
-              cursor: isLoading ? "not-allowed" : "pointer",
-            }}
-          >
-            {isLoading ? (t.loading || "Loading...") : (t.register || "Register")}
-          </button>
-        </form>
+          />
+        </label>
 
-        <div style={{ marginTop: "1.5rem", textAlign: "center", color: "#94a3b8" }}>
-          {t.alreadyHaveAccount || "Already have an account?"}{" "}
-          <Link to="/login" style={{ color: "#60a5fa", textDecoration: "none" }}>
-            {t.login || "Login"}
-          </Link>
+        <label className="checkbox-row">
+          <input
+            type="checkbox"
+            id="createPlayer"
+            checked={createPlayer}
+            onChange={(e) => {
+              setCreatePlayer(e.target.checked);
+              if (!e.target.checked) setPlayerName("");
+            }}
+            disabled={isLoading}
+          />
+          <span>{t.createPlayerAccount}</span>
+        </label>
+
+        {createPlayer && (
+          <label className="field">
+            <span className="field-label">{t.playerName}</span>
+            <input
+              type="text"
+              className="field-input"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              autoComplete="name"
+              required
+              disabled={isLoading}
+            />
+          </label>
+        )}
+
+        {error && <div className="text-error" style={{ padding: "0.5rem", background: "#7f1d1d", borderRadius: "4px", color: "#fca5a5" }}>{error}</div>}
+
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+            {isLoading ? t.loading : t.register}
+          </button>
         </div>
+      </form>
+
+      <div className="auth-footer">
+        {t.alreadyHaveAccount}{" "}
+        <Link to="/login">{t.login}</Link>
       </div>
     </div>
   );
 }
-

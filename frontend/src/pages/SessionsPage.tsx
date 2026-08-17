@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import type { FormEvent, CSSProperties } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, deleteSession, getSessions, type Session, type SessionCreate } from "../api/sessions";
 import { useTranslation } from "../i18n/useTranslation";
 import { useDateFormat } from "../hooks/useDateFormat";
 import { useAuth } from "../auth/AuthContext";
+import { ResponsiveTable } from "../components/ui/ResponsiveTable";
+import { useConfirmDialog } from "../components/ui/ConfirmDialog";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { PageHeader } from "../components/layout/PageHeader";
 
-const defaultDateValue = () => new Date().toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+const defaultDateValue = () => new Date().toISOString().slice(0, 16);
 
 export default function SessionsPage() {
   const { t } = useTranslation();
@@ -14,6 +18,7 @@ export default function SessionsPage() {
   const { isAuthenticated, user } = useAuth();
   const isAdmin = user?.is_admin || user?.is_root;
   const navigate = useNavigate();
+  const { confirm } = useConfirmDialog();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +35,6 @@ export default function SessionsPage() {
       setError(null);
       const data = await getSessions();
       if (!Array.isArray(data)) {
-        console.error("Unexpected sessions payload", data);
         setError(t.unexpectedResponse);
         setSessions([]);
         return;
@@ -56,10 +60,7 @@ export default function SessionsPage() {
     }
     try {
       setError(null);
-      await createSession({
-        ...form,
-        location: form.location.trim(),
-      });
+      await createSession({ ...form, location: form.location.trim() });
       setForm({ date: defaultDateValue(), location: "", max_players: 10 });
       await loadSessions();
     } catch (err) {
@@ -69,7 +70,11 @@ export default function SessionsPage() {
   };
 
   const handleDelete = async (sessionId: number) => {
-    const confirmed = window.confirm(t.deleteSessionConfirm);
+    const confirmed = await confirm({
+      message: t.deleteSessionConfirm,
+      variant: "danger",
+      confirmLabel: t.delete,
+    });
     if (!confirmed) return;
     try {
       setError(null);
@@ -81,185 +86,83 @@ export default function SessionsPage() {
     }
   };
 
+  const statusLabel = (status: Session["status"]) =>
+    status === "PLANNED" ? t.planned : status === "COMPLETED" ? t.completed : t.cancelled;
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>{t.sessionsPage}</h1>
+    <div className="page-container">
+      <PageHeader title={t.sessionsPage} />
 
       {isAdmin && (
-        <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.field}>
-          <span style={styles.label}>{t.dateTime}</span>
-          <input
-            style={styles.input}
-            type="datetime-local"
-            value={form.date}
-            onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-            required
-          />
-        </label>
-        <label style={styles.field}>
-          <span style={styles.label}>{t.location}</span>
-          <input
-            style={styles.input}
-            type="text"
-            value={form.location}
-            onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-            placeholder="ex. Salle communautaire"
-            required
-          />
-        </label>
-        <label style={styles.field}>
-          <span style={styles.label}>{t.maxPlayers}</span>
-          <input
-            style={styles.input}
-            type="number"
-            min={2}
-            max={30}
-            value={form.max_players}
-            onChange={(e) => setForm((f) => ({ ...f, max_players: Number(e.target.value) }))}
-            required
-          />
-        </label>
-        <button style={styles.button} type="submit">
-          {t.createSession}
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} className="form-grid">
+          <label className="field">
+            <span className="field-label">{t.dateTime}</span>
+            <input
+              className="field-input"
+              type="datetime-local"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              required
+            />
+          </label>
+          <label className="field">
+            <span className="field-label">{t.location}</span>
+            <input
+              className="field-input"
+              type="text"
+              value={form.location}
+              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              placeholder="ex. Salle communautaire"
+              required
+            />
+          </label>
+          <label className="field">
+            <span className="field-label">{t.maxPlayers}</span>
+            <input
+              className="field-input"
+              type="number"
+              min={2}
+              max={30}
+              value={form.max_players}
+              onChange={(e) => setForm((f) => ({ ...f, max_players: Number(e.target.value) }))}
+              required
+            />
+          </label>
+          <button className="btn btn-primary" type="submit">
+            {t.createSession}
+          </button>
+        </form>
       )}
 
-      {!isAuthenticated && (
-        <p style={{ color: "#6b7280", fontStyle: "italic", marginBottom: "1rem" }}>
-          {t.readOnlyMode || "Read-only mode. Please log in to make changes."}
-        </p>
-      )}
+      {!isAuthenticated && <p className="text-muted" style={{ fontStyle: "italic", marginBottom: "1rem" }}>{t.readOnlyMode}</p>}
 
-      {loading && <p>{t.loadingSessions}</p>}
-      {error && <p style={styles.error}>{error}</p>}
+      {loading && <LoadingSpinner label={t.loadingSessions} />}
+      {error && <p className="text-error">{error}</p>}
       {!loading && sessions.length === 0 && <p>{t.noSessions}</p>}
 
-      {sessions.length > 0 && (
-        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-          <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>{t.date}</th>
-              <th style={styles.th}>{t.location}</th>
-              <th style={styles.th}>{t.status}</th>
-              {isAuthenticated && <th style={styles.th}>{t.actions}</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((session) => (
-              <tr key={session.id}>
-                <td style={styles.td}>{formatDate(session.date)}</td>
-                <td style={styles.td}>{session.location}</td>
-                <td style={styles.td}>{session.status === "PLANNED" ? t.planned : session.status === "COMPLETED" ? t.completed : t.cancelled}</td>
-                {isAuthenticated ? (
-                  <td style={styles.td}>
-                    <button
-                      style={styles.linkButton}
-                      onClick={() => navigate(`/sessions/${session.id}`)}
-                    >
-                      {t.viewDetails}
-                    </button>
-                    <button
-                      style={{ ...styles.linkButton, marginLeft: "0.5rem", color: "#b91c1c" }}
-                      onClick={() => void handleDelete(session.id)}
-                    >
-                      {t.delete}
-                    </button>
-                  </td>
-                ) : (
-                  <td style={styles.td}>
-                    <button
-                      style={styles.linkButton}
-                      onClick={() => navigate(`/sessions/${session.id}`)}
-                    >
-                      {t.viewDetails}
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
+      {!loading && sessions.length > 0 && (
+        <ResponsiveTable
+          data={sessions}
+          getRowKey={(session) => session.id}
+          columns={[
+            { key: "date", header: t.date, render: (session) => formatDate(session.date) },
+            { key: "location", header: t.location, render: (session) => session.location },
+            { key: "status", header: t.status, render: (session) => statusLabel(session.status) },
+          ]}
+          actions={(session) => (
+            <>
+              <button className="btn-action" onClick={() => navigate(`/sessions/${session.id}`)}>
+                {t.viewDetails}
+              </button>
+              {isAuthenticated && (
+                <button className="btn-action btn-action-danger" onClick={() => void handleDelete(session.id)}>
+                  {t.delete}
+                </button>
+              )}
+            </>
+          )}
+        />
       )}
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  container: {
-    maxWidth: "960px",
-    margin: "0 auto",
-    padding: "1.5rem",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    width: "100%",
-  },
-  heading: {
-    marginBottom: "1rem",
-  },
-  form: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "0.75rem",
-    alignItems: "end",
-    marginBottom: "1.25rem",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.35rem",
-  },
-  label: {
-    fontSize: "0.95rem",
-    color: "#374151",
-  },
-  input: {
-    padding: "0.75rem 0.5rem",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    fontSize: "16px", // Prevent zoom on iOS
-    minHeight: "44px", // Touch target size
-    width: "100%",
-  },
-  button: {
-    padding: "0.75rem 1rem",
-    backgroundColor: "#2563eb",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    justifySelf: "start",
-    minHeight: "44px", // Touch target size
-    fontSize: "1rem",
-    touchAction: "manipulation",
-  },
-  error: {
-    color: "#b91c1c",
-    marginBottom: "0.75rem",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    display: "block",
-    overflowX: "auto",
-    whiteSpace: "nowrap",
-  },
-  th: {
-    textAlign: "left",
-    borderBottom: "1px solid #e5e7eb",
-    padding: "0.5rem 0.25rem",
-  },
-  td: {
-    padding: "0.5rem 0.25rem",
-    borderBottom: "1px solid #f3f4f6",
-  },
-  linkButton: {
-    background: "none",
-    border: "none",
-    color: "#2563eb",
-    cursor: "pointer",
-    padding: 0,
-  },
-};

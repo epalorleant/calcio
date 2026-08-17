@@ -10,6 +10,11 @@ export const commonStyles: Record<string, CSSProperties> = {
     fontFamily: "system-ui, -apple-system, sans-serif",
     width: "100%",
   },
+  h1: {
+    fontSize: "1.75rem",
+    fontWeight: 600,
+    marginBottom: "1rem",
+  },
   heading: {
     marginBottom: "1rem",
   },
