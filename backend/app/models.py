@@ -69,6 +69,10 @@ class User(Base):
 
     player: Mapped["Player | None"] = relationship("Player", back_populates="user", uselist=False)
 
+    @property
+    def player_id(self) -> int | None:
+        return self.player.id if self.player else None
+
 
 class Player(Base):
     __tablename__ = "players"
